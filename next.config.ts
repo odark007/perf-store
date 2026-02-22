@@ -6,7 +6,19 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'jmsunxmdzivwgioyoxap.supabase.co',
+        hostname: 'www.thewhiskyworld.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'unsplash.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'encrypted-tbn0.gstatic.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'eominikzaajxzvmmpmtt.supabase.co',
       },
       {
         protocol: 'https',

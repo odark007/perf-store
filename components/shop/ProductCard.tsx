@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import SmartImage from '@/components/ui/SmartImage';
 import { ShoppingCart, Minus, Plus, Star } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
@@ -136,7 +136,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
     >
       <Link href={`/products/${slug}`} className="block relative">
         <div className="relative aspect-[3/4] bg-secondary-100 overflow-hidden rounded-t-xl">
-          <Image
+          <SmartImage
             src={image || 'https://placehold.co/600x800/png?text=No+Image'}
             alt={title}
             fill
@@ -174,6 +174,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <select
                 value={selectedVariantId}
                 onChange={(e) => setSelectedVariantId(e.target.value)}
+                title="Select product variant"
                 className="w-full px-3 py-2 text-sm bg-secondary-50 border border-secondary-200 rounded-lg outline-none cursor-pointer focus:border-primary-500 transition-colors"
               >
                 {variants.map((variant) => (
@@ -201,6 +202,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
             <div className="flex items-center border border-secondary-200 rounded-lg bg-white h-9">
               <button
                 onClick={(e) => { e.preventDefault(); handleDecrement(); }}
+                title="Decrease quantity"
                 className="p-1.5 h-full flex items-center justify-center text-secondary-500 hover:text-primary-600 hover:bg-secondary-50 rounded-l-lg transition-colors disabled:opacity-30"
                 disabled={quantity <= 1 || isOutOfStock || isCartLimitReached}
               >
@@ -211,6 +213,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
               </span>
               <button
                 onClick={(e) => { e.preventDefault(); handleIncrement(); }}
+                title="Increase quantity"
                 className="p-1.5 h-full flex items-center justify-center text-secondary-500 hover:text-primary-600 hover:bg-secondary-50 rounded-r-lg transition-colors disabled:opacity-30"
                 disabled={quantity >= maxAddable || isOutOfStock || isCartLimitReached}
               >

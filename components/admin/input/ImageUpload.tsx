@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import Image from 'next/image';
+import SmartImage from '@/components/ui/SmartImage';
 import { Upload, X, Loader2, Image as ImageIcon } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { createClient } from '@/lib/supabase/client';
@@ -15,9 +15,9 @@ interface ImageUploadProps {
   bucket?: string; // <-- New Prop
 }
 
-const ImageUpload: React.FC<ImageUploadProps> = ({ 
-  value, 
-  onChange, 
+const ImageUpload: React.FC<ImageUploadProps> = ({
+  value,
+  onChange,
   onRemove,
   folder = 'uploads',
   bucket = 'product-images' // Default to product bucket
@@ -36,7 +36,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         useWebWorker: true,
       };
       const compressedFile = await imageCompression(file, options);
-      
+
       // 2. Upload
       const supabase = createClient();
       const fileExt = file.name.split('.').pop();
@@ -44,7 +44,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
       // Use dynamic bucket name
       const { error: uploadError } = await supabase.storage
-        .from(bucket) 
+        .from(bucket)
         .upload(fileName, compressedFile);
 
       if (uploadError) throw uploadError;
@@ -86,11 +86,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     <div className="space-y-4">
       {value ? (
         <div className="relative w-full h-64 md:h-80 rounded-xl overflow-hidden border border-secondary-200 group bg-secondary-50">
-          <Image 
-            src={value} 
-            alt="Uploaded image" 
-            fill 
-            className="object-contain md:object-cover" 
+          <SmartImage
+            src={value}
+            alt="Uploaded image"
+            fill
+            className="object-contain md:object-cover"
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
             <button
@@ -119,9 +119,10 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             ref={fileInputRef}
             className="hidden"
             accept="image/*"
+            title="Upload Product Image"
             onChange={(e) => e.target.files?.[0] && processUpload(e.target.files[0])}
           />
-          
+
           {isUploading ? (
             <div className="flex flex-col items-center text-primary-600">
               <Loader2 size={32} className="animate-spin mb-2" />
@@ -143,9 +144,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       <div className="flex gap-2">
         <div className="relative flex-1">
           <ImageIcon className="absolute left-3 top-2.5 text-secondary-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="Or paste image URL..." 
+          <input
+            type="text"
+            placeholder="Or paste image URL..."
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm bg-secondary-50 border border-secondary-200 rounded-lg focus:border-primary-500 outline-none"

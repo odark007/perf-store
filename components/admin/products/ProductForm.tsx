@@ -90,10 +90,14 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
       base_image_url: image,
       brand,
       is_featured: isFeatured,
-      discount_percent: isFeatured ? discountPercent : 0,
+      discount_percent: isFeatured ? (discountPercent || 0) : 0,
       discount_start_at: isFeatured ? (startDate || null) : null,
       discount_end_at: isFeatured ? (endDate || null) : null,
-      variants: variants
+      variants: variants.map(v => ({
+        ...v,
+        price: v.price || 0,
+        stock_deduction: v.stock_deduction || 0
+      }))
     };
 
     let res;
@@ -104,8 +108,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
       // FIX: Added 'as any' to bypass strict string literal check
       res = await createProduct({
         ...productData,
-        initial_stock: initialStock,
-        threshold: threshold,
+        initial_stock: initialStock || 0,
+        threshold: threshold || 0,
       } as any);
     }
 
@@ -187,8 +191,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
                   </label>
                   <input
                     type="number"
-                    value={discountPercent}
-                    onChange={e => setDiscountPercent(parseFloat(e.target.value))}
+                    value={Number.isNaN(discountPercent) ? '' : discountPercent}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setDiscountPercent(val === '' ? NaN : parseFloat(val));
+                    }}
                     className="w-full p-2 border border-amber-200 rounded text-amber-900 font-bold"
                     placeholder="0"
                     min="0"
@@ -248,11 +255,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
                   </div>
                   <div className="w-24">
                     <label className="text-xs text-secondary-500">Price (GH₵)</label>
-                    <input type="number" value={variant.price} onChange={e => updateVariant(index, 'price', parseFloat(e.target.value))} className="w-full p-2 border rounded text-sm" />
+                    <input
+                      type="number"
+                      value={Number.isNaN(variant.price) ? '' : variant.price}
+                      onChange={e => {
+                        const val = e.target.value;
+                        updateVariant(index, 'price', val === '' ? NaN : parseFloat(val));
+                      }}
+                      className="w-full p-2 border rounded text-sm"
+                    />
                   </div>
                   <div className="w-20">
                     <label className="text-xs text-secondary-500">Deducts</label>
-                    <input type="number" value={variant.stock_deduction} onChange={e => updateVariant(index, 'stock_deduction', parseInt(e.target.value))} className="w-full p-2 border rounded text-sm" />
+                    <input
+                      type="number"
+                      value={Number.isNaN(variant.stock_deduction) ? '' : variant.stock_deduction}
+                      onChange={e => {
+                        const val = e.target.value;
+                        updateVariant(index, 'stock_deduction', val === '' ? NaN : parseInt(val));
+                      }}
+                      className="w-full p-2 border rounded text-sm"
+                    />
                   </div>
                   {variants.length > 1 && (
                     <button type="button" onClick={() => removeVariant(index)} className="p-2 text-red-500 hover:bg-red-100 rounded">
@@ -277,11 +300,27 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
               <h3 className="font-bold text-blue-900">Inventory</h3>
               <div>
                 <label className="block text-sm font-medium text-blue-800 mb-1">Initial Stock</label>
-                <input type="number" value={initialStock} onChange={e => setInitialStock(parseInt(e.target.value))} className="w-full p-2 border border-blue-200 rounded-lg text-lg font-mono" />
+                <input
+                  type="number"
+                  value={Number.isNaN(initialStock) ? '' : initialStock}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setInitialStock(val === '' ? NaN : parseInt(val));
+                  }}
+                  className="w-full p-2 border border-blue-200 rounded-lg text-lg font-mono"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-blue-800 mb-1">Low Stock Alert</label>
-                <input type="number" value={threshold} onChange={e => setThreshold(parseInt(e.target.value))} className="w-full p-2 border border-blue-200 rounded-lg" />
+                <input
+                  type="number"
+                  value={Number.isNaN(threshold) ? '' : threshold}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setThreshold(val === '' ? NaN : parseInt(val));
+                  }}
+                  className="w-full p-2 border border-blue-200 rounded-lg"
+                />
               </div>
             </div>
           )}
