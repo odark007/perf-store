@@ -7,18 +7,16 @@ import {
   Search,
   Menu,
   X,
-  Wine,
-  Beer,
-  Martini,
   User,
   LogOut,
   Clock,
-  GlassWater
+  Heart,
+  Sparkles
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { useCartStore } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -28,6 +26,8 @@ const Navbar = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   // FIX: Select specific state pieces to trigger re-renders correctly
   const items = useCartStore((state) => state.items);
@@ -54,11 +54,9 @@ const Navbar = () => {
     const controlNavbar = () => {
       if (typeof window !== 'undefined') {
         if (window.scrollY > lastScrollY && window.scrollY > 100) {
-          // Scroll Down -> Hide
           setIsVisible(false);
-          setIsMobileMenuOpen(false); // Close mobile menu if scrolling down
+          setIsMobileMenuOpen(false);
         } else {
-          // Scroll Up -> Show
           setIsVisible(true);
         }
         setLastScrollY(window.scrollY);
@@ -79,43 +77,49 @@ const Navbar = () => {
     router.push('/');
   };
 
-  // FIX: Calculate count directly in render to ensure reactivity
   const cartItemCount = isMounted ? items.reduce((total, item) => total + item.quantity, 0) : 0;
 
   const navLinks = [
-    { label: 'All Products', href: '/shop' },
-    { label: 'Beer', href: '/shop?category=beer', icon: Beer },
-    { label: 'Wine', href: '/shop?category=wine', icon: Wine },
-    { label: 'Spirits', href: '/shop?category=spirits', icon: Martini },
-    { label: 'Soft Drinks', href: '/shop?category=soft-drinks', icon: GlassWater },
+    { label: 'All Fragrances', href: '/shop' },
+    { label: "Men's", href: '/shop?category=mens' },
+    { label: "Women's", href: '/shop?category=womens' },
+    { label: 'Unisex & Niche', href: '/shop?category=unisex' },
+    { label: 'Gift Sets', href: '/shop?category=gift-sets' },
+    { label: 'Body Mists', href: '/shop?category=body-mists' },
   ];
 
+  const isActive = (href: string) => {
+    if (href === '/shop') return pathname === '/shop' && !searchParams.get('category');
+    return pathname === '/shop' && searchParams.get('category') === href.split('category=')[1];
+  };
+
   return (
-    <header className={`sticky top-0 z-[var(--z-sticky)] bg-white/95 backdrop-blur-md border-b border-secondary-200 shadow-sm transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
-      <div className="container-custom h-[var(--header-height-mobile)] md:h-[var(--header-height)] flex items-center justify-between">
+    <header className={`sticky top-0 z-[var(--z-sticky)] bg-[#1a0a2e]/92 backdrop-blur-xl border-b border-[rgba(201,168,76,0.25)] transition-transform duration-300 h-18 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+      <div className="container-custom h-full flex items-center justify-between">
 
         {/* 1. Logo */}
-        <Link href="/" className="flex items-center gap-2 z-20">
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-            <span className="font-display font-bold text-white text-lg md:text-xl">L</span>
+        <Link href="/" className="flex items-center gap-3 z-20 group">
+          <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#e8c97a] rounded-full flex items-center justify-center shadow-lg shadow-gold/20 transition-transform group-hover:scale-105">
+            <span className="font-display font-bold text-[#1a0a2e] text-xl">P</span>
           </div>
           <div className="flex flex-col">
-            <span className="font-display font-bold text-lg md:text-xl leading-none text-secondary-900">
-              LiquorShop
+            <span className="font-display font-bold text-lg md:text-xl leading-none text-[#c9a84c] tracking-tight uppercase">
+              The Perfume Store
             </span>
-            <span className="text-[10px] uppercase tracking-widest text-secondary-500 font-medium">
+            <span className="text-[10px] uppercase tracking-[0.3em] text-gold-pale/60 font-medium font-body mt-0.5">
               Ghana
             </span>
           </div>
         </Link>
 
         {/* 2. Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
-              className="text-sm font-medium text-secondary-600 hover:text-primary-600 transition-colors"
+              className={`text-[12px] font-medium tracking-[0.15em] uppercase font-body transition-colors duration-200 ${isActive(link.href) ? 'text-[#c9a84c]' : 'text-[#c4b8d4] hover:text-[#c9a84c]'
+                }`}
             >
               {link.label}
             </Link>
@@ -123,55 +127,66 @@ const Navbar = () => {
         </nav>
 
         {/* 3. Actions */}
-        <div className="flex items-center gap-2 md:gap-4 z-20">
+        <div className="flex items-center gap-2 md:gap-3 z-20">
+
+          {/* Wishlist Link */}
+          <Link href="/wishlist" className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors">
+            <Heart size={22} />
+          </Link>
 
           {/* User Menu (Desktop) */}
           <div className="relative hidden md:block">
             {user ? (
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="p-2 hover:bg-secondary-100 rounded-full transition-colors"
+                className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors"
+                aria-label="User menu"
               >
-                <User size={24} className="text-primary-600" />
+                <User size={22} />
               </button>
             ) : (
-              <Link href="/auth/login" className="p-2 hover:bg-secondary-100 rounded-full transition-colors text-secondary-700 font-medium text-sm flex items-center gap-1">
+              <Link href="/auth/login" className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors text-sm font-medium flex items-center gap-2">
                 <User size={20} />
-                <span>Login</span>
+                <span className="hidden lg:inline uppercase tracking-wider text-[11px]">Login</span>
               </Link>
             )}
 
-            {/* Click Outside Overlay */}
             {isUserMenuOpen && (
-              <div
-                className="fixed inset-0 z-30 cursor-default"
-                onClick={() => setIsUserMenuOpen(false)}
-              />
+              <div className="fixed inset-0 z-30 cursor-default" onClick={() => setIsUserMenuOpen(false)} />
             )}
 
-            {/* User Dropdown */}
             {isUserMenuOpen && user && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-secondary-100 py-2 animate-scale-in origin-top-right z-40">
-                <div className="px-4 py-3 border-b border-secondary-50">
-                  <p className="text-xs text-secondary-500 font-medium">Signed in as</p>
-                  <p className="text-sm font-bold text-secondary-900 truncate">{user.email}</p>
+              <div className="absolute right-0 mt-3 w-64 bg-[#2d1554] rounded-xl shadow-2xl border border-[rgba(201,168,76,0.2)] py-2 animate-scale-in origin-top-right z-40">
+                <div className="px-5 py-4 border-b border-[rgba(201,168,76,0.1)]">
+                  <p className="text-[10px] text-gold-pale/50 font-bold uppercase tracking-widest mb-1">Authenticated</p>
+                  <p className="text-sm font-semibold text-white truncate">{user.email}</p>
                 </div>
 
-                <div className="py-1">
+                <div className="py-2">
                   <Link
                     href="/account/history"
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm text-secondary-700 hover:bg-secondary-50 transition-colors"
+                    className="flex items-center gap-3 px-5 py-3 text-sm text-[#c4b8d4] hover:text-[#c9a84c] hover:bg-[#1a0a2e]/40 transition-all font-medium"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
-                    <Clock size={16} className="text-secondary-400" />
+                    <Clock size={16} />
                     Order History
                   </Link>
+                  {user.role === 'store_manager' && (
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-3 px-5 py-3 text-sm text-[#c4b8d4] hover:text-[#c9a84c] hover:bg-[#1a0a2e]/40 transition-all font-medium"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Sparkles size={16} />
+                      Admin Panel
+                    </Link>
+                  )}
                 </div>
 
-                <div className="border-t border-secondary-50 pt-1">
+                <div className="border-t border-[rgba(201,168,76,0.1)] pt-2">
                   <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-5 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-all font-medium text-left"
                   >
                     <LogOut size={16} />
                     Sign Out
@@ -182,29 +197,24 @@ const Navbar = () => {
           </div>
 
           {/* Cart Icon */}
-          <Link
-            href="/cart"
-            onClick={(e) => {
-              e.preventDefault();
-              toggleCart();
-            }}
-            className="relative p-2 hover:bg-secondary-100 rounded-full transition-colors group"
+          <button
+            onClick={toggleCart}
+            className="relative p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors group"
+            aria-label="Toggle cart"
           >
-            <ShoppingCart size={24} className="text-secondary-700 group-hover:text-primary-600" />
+            <ShoppingCart size={22} />
             {cartItemCount > 0 ? (
-              <span className="absolute top-0 right-0 transform translate-x-1 -translate-y-1">
-                <Badge variant="danger" size="sm" className="px-1.5 h-5 min-w-[20px] shadow-sm border-white">
+              <span className="absolute -top-1 -right-1">
+                <Badge variant="danger" size="sm" className="px-1.5 h-5 min-w-[20px] shadow-lg border-[#1a0a2e] border-2 bg-[#c9a84c] text-[#1a0a2e]">
                   {cartItemCount}
                 </Badge>
               </span>
-            ) : (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-secondary-300 rounded-full border-2 border-white group-hover:bg-primary-500 transition-colors" />
-            )}
-          </Link>
+            ) : null}
+          </button>
 
           {/* Mobile Menu Toggle */}
           <button
-            className="md:hidden p-2 text-secondary-900"
+            className="lg:hidden p-2 text-[#c9a84c]"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -212,57 +222,44 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* 4. Mobile Menu Overlay */}
+      {/* 4. Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="absolute top-[var(--header-height-mobile)] left-0 w-full bg-secondary-50 border-b border-secondary-200 shadow-lg md:hidden animate-slide-down h-[calc(100vh-var(--header-height-mobile))] overflow-y-auto z-40">
-
-          <div className="p-4 border-b border-secondary-100">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search products..."
-                className="w-full pl-10 pr-4 py-3 bg-secondary-50 border border-secondary-200 rounded-lg outline-none focus:border-primary-500"
-              />
-              <Search size={20} className="absolute left-3 top-3.5 text-secondary-400" />
-            </div>
-          </div>
-
-          <nav className="p-2">
+        <div className="absolute top-18 left-0 w-full bg-[#1a0a2e] border-b border-[rgba(201,168,76,0.25)] shadow-2xl lg:hidden animate-slide-down h-[calc(100vh-4.5rem)] overflow-y-auto z-40">
+          <nav className="p-4 space-y-2">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="flex items-center gap-3 p-4 text-secondary-700 hover:bg-secondary-50 rounded-lg"
+                className={`flex items-center gap-4 p-4 rounded-xl font-medium transition-all ${isActive(link.href) ? 'bg-[#2d1554] text-[#c9a84c]' : 'text-[#c4b8d4]'
+                  }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                {link.icon && <link.icon size={20} className="text-secondary-400" />}
-                <span className="font-medium">{link.label}</span>
+                <span className="uppercase tracking-[0.2em] text-xs">{link.label}</span>
               </Link>
             ))}
 
-            <div className="h-px bg-secondary-100 my-2" />
+            <div className="h-px bg-[rgba(201,168,76,0.1)] my-4" />
 
             {user ? (
-              <>
-                <div className="px-4 py-2">
-                  <p className="text-xs text-secondary-500">Signed in as</p>
-                  <p className="text-sm font-bold text-secondary-900">{user.email}</p>
+              <div className="p-4 bg-[#2d1554] rounded-2xl border border-[rgba(201,168,76,0.1)]">
+                <p className="text-[10px] text-gold-pale/50 font-bold uppercase tracking-widest mb-1">Welcome</p>
+                <p className="text-sm font-semibold text-white mb-4">{user.email}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Link href="/account/history" className="flex items-center justify-center gap-2 p-3 bg-[#1a0a2e] rounded-lg text-[#c4b8d4]" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Clock size={16} /> <span className="text-[10px] font-bold uppercase">History</span>
+                  </Link>
+                  <button onClick={handleSignOut} className="flex items-center justify-center gap-2 p-3 bg-red-900/10 rounded-lg text-red-400">
+                    <LogOut size={16} /> <span className="text-[10px] font-bold uppercase">Logout</span>
+                  </button>
                 </div>
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-3 p-4 text-red-600 hover:bg-red-50 rounded-lg text-left font-medium"
-                >
-                  <LogOut size={20} />
-                  Sign Out
-                </button>
-              </>
+              </div>
             ) : (
               <Link
                 href="/auth/login"
-                className="flex items-center gap-3 p-4 text-primary-600 hover:bg-primary-50 rounded-lg font-medium"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-[#c9a84c] to-[#e8c97a] text-[#1a0a2e] rounded-xl font-bold uppercase tracking-widest text-xs"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                <User size={20} />
+                <User size={18} />
                 Login / Sign Up
               </Link>
             )}

@@ -16,33 +16,33 @@ const CampaignSpotlight: React.FC<Props> = ({ campaign }) => {
   const youtubeId = campaign.media_type === 'youtube' ? getYoutubeId(campaign.media_url) : null;
 
   return (
-    <section className="py-20 bg-secondary-900 overflow-hidden relative">
+    <section className="py-20 bg-brand-cream overflow-hidden relative">
       {/* Decorative Background Blur */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 opacity-20 pointer-events-none">
-         <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-primary-600 rounded-full blur-[120px]" />
-         <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-blue-600 rounded-full blur-[120px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-primary-600 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-blue-600 rounded-full blur-[120px]" />
       </div>
 
       <div className="container-custom relative z-10">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-          
+
           {/* TEXT CONTENT */}
           <div className="w-full lg:w-1/2 text-center lg:text-left space-y-6">
-            <span className="inline-block px-3 py-1 rounded-full bg-primary-500/20 text-primary-400 border border-primary-500/30 text-xs font-bold uppercase tracking-wider">
+            <span className="inline-block px-3 py-1 rounded-full bg-brand-gold/10 text-brand-gold border border-brand-gold/30 text-xs font-bold uppercase tracking-wider">
               Spotlight
             </span>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white leading-tight">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-brand-deep leading-tight">
               {campaign.title}
             </h2>
-            <p className="text-lg text-secondary-300 leading-relaxed max-w-xl mx-auto lg:mx-0">
+            <p className="text-lg text-brand-muted leading-relaxed max-w-xl mx-auto lg:mx-0">
               {campaign.description}
             </p>
             {campaign.cta_text && campaign.cta_link && (
               <div className="pt-4">
                 <Link href={campaign.cta_link}>
-                  <Button 
-                    size="lg" 
-                    className="h-14 px-8 text-lg bg-white text-secondary-900 hover:bg-secondary-100 border-none"
+                  <Button
+                    size="lg"
+                    className="h-14 px-8 text-lg bg-brand-deep text-white hover:bg-brand-mid border-none shadow-xl shadow-brand-deep/20"
                     rightIcon={<ArrowRight size={20} />}
                   >
                     {campaign.cta_text}
@@ -54,13 +54,13 @@ const CampaignSpotlight: React.FC<Props> = ({ campaign }) => {
 
           {/* MEDIA CONTENT */}
           <div className="w-full lg:w-1/2">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-secondary-800 aspect-video lg:aspect-[4/3] group">
-              
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-brand-border bg-white aspect-video lg:aspect-[4/3] group">
+
               {campaign.media_type === 'image' ? (
-                <Image 
-                  src={campaign.media_url} 
-                  alt={campaign.title} 
-                  fill 
+                <Image
+                  src={campaign.media_url}
+                  alt={campaign.title}
+                  fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                 />
               ) : youtubeId ? (
@@ -79,7 +79,7 @@ const CampaignSpotlight: React.FC<Props> = ({ campaign }) => {
                   <span className="ml-2">Video Unavailable</span>
                 </div>
               )}
-            
+
             </div>
           </div>
 

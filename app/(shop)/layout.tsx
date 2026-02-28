@@ -1,7 +1,6 @@
 import React from 'react';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import AgeGateModal from '@/components/modals/AgeGateModal';
 import CartDrawer from '@/components/shop/CartDrawer';
 import { createClient } from '@/lib/supabase/server';
 
@@ -20,7 +19,6 @@ export default async function ShopLayout({
 
   return (
     <>
-      <AgeGateModal />
       <CartDrawer />
       <Navbar />
       <main className="flex-1 pt-4 md:pt-8">

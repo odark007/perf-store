@@ -3,20 +3,20 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Package,
+  Instagram,
+  Facebook,
+  Twitter,
   Mail,
   Phone,
   MapPin,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
   ShieldCheck,
+  Truck,
+  RotateCcw,
+  Sparkles,
   CreditCard
 } from 'lucide-react';
 import { StoreSettings } from '@/lib/types';
 
-// Add Props Interface
 interface FooterProps {
   settings?: StoreSettings | null;
 }
@@ -25,206 +25,167 @@ const Footer: React.FC<FooterProps> = ({ settings }) => {
   const currentYear = new Date().getFullYear();
 
   // Fallbacks if DB is empty
-  const phone = settings?.primary_phone || '+233 24 400 0000';
-  const email = settings?.support_email || 'info@liquorshop.gh';
+  const phone = settings?.primary_phone || '+233 24 000 0000';
+  const email = settings?.support_email || 'concierge@perfumestore.gh';
 
-  // Clean phone for href (remove spaces)
-  const telLink = `tel:${phone.replace(/\s+/g, '')}`;
+  const footerLinks = {
+    shop: [
+      { label: 'All Fragrances', href: '/shop' },
+      { label: "Men's Fragrances", href: '/shop?category=mens' },
+      { label: "Women's Fragrances", href: '/shop?category=womens' },
+      { label: 'Unisex & Niche', href: '/shop?category=unisex' },
+      { label: 'Gift Sets', href: '/shop?category=gift-sets' },
+      { label: 'Body Mists', href: '/shop?category=body-mists' },
+    ],
+    support: [
+      { label: 'Track Order', href: '/account/history' },
+      { label: 'Shipping Policy', href: '/shipping' },
+      { label: 'Returns & Exchanges', href: '/returns' },
+      { label: 'FAQ', href: '/faq' },
+      { label: 'Contact Us', href: '/contact' },
+    ],
+    company: [
+      { label: 'Our Story', href: '/about' },
+      { label: 'The Scent Journal', href: '/blog' },
+      { label: 'Authenticity Guarantee', href: '/authenticity' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Privacy Policy', href: '/privacy' },
+    ]
+  };
 
   return (
-    <footer className="bg-secondary-900 text-white mt-auto">
-
-      {/* Main Footer */}
-      <div className="container-custom py-12 md:py-16">
-        <div className="flex flex-col lg:grid lg:grid-cols-5 gap-8 lg:gap-12">
-          {/* Column 1: Brand */}
-          <div className="lg:col-span-2">
-            <Link href="/" className="inline-flex items-center gap-2 mb-4 group">
-              <Package className="text-primary-500 group-hover:rotate-12 transition-transform duration-300" size={32} />
-              <div>
-                <h3 className="text-xl font-display font-bold">LiquorShop</h3>
-                <p className="text-xs text-secondary-400">Premium Selection</p>
-              </div>
-            </Link>
-
-            <p className="text-secondary-300 text-sm mb-6 max-w-sm">
-              Ghana's premier online destination for premium wines, spirits, and craft beers.
-              Delivering excellence since 2024.
-            </p>
-
-            {/* Age Verification Reminder */}
-            <div className="flex items-start gap-2 p-3 bg-secondary-800 rounded-lg border border-secondary-700 mb-6">
-              <ShieldCheck className="text-amber-500 flex-shrink-0 mt-0.5" size={18} />
-              <div className="text-xs text-secondary-300">
-                <p className="font-semibold text-white mb-1">18+ Only</p>
-                <p>You must be of legal drinking age to purchase alcohol. Drink responsibly.</p>
-              </div>
+    <footer className="bg-[#1a0a2e] text-[#c4b8d4] border-t border-[rgba(201,168,76,0.2)] mt-auto font-body">
+      {/* 1. Value Props / Trust Signals */}
+      <div className="border-b border-[rgba(201,168,76,0.1)]">
+        <div className="container-custom py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center md:text-left">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+              <ShieldCheck size={24} />
             </div>
-
-            {/* Contact Info (Dynamic) */}
-            <div className="space-y-3">
-              <a
-                href={telLink}
-                className="flex items-center gap-2 text-sm text-secondary-300 hover:text-primary-500 transition-colors"
-              >
-                <Phone size={16} />
-                <span>{phone}</span>
-              </a>
-              <a
-                href={`mailto:${email}`}
-                className="flex items-center gap-2 text-sm text-secondary-300 hover:text-primary-500 transition-colors"
-              >
-                <Mail size={16} />
-                <span>{email}</span>
-              </a>
-              <div className="flex items-start gap-2 text-sm text-secondary-300">
-                <MapPin size={16} className="flex-shrink-0 mt-0.5" />
-                <span>123 Independence Ave, Accra, Ghana</span>
-              </div>
+            <div>
+              <h4 className="font-bold text-white mb-1 uppercase tracking-wider text-sm">100% Authentic</h4>
+              <p className="text-xs leading-relaxed">Direct from authorized luxury distributors worldwide.</p>
             </div>
           </div>
-
-          {/* Links Wrapper: 3 Columns on Mobile & Desktop */}
-          <div className="grid grid-cols-3 gap-4 md:gap-8 lg:col-span-3 w-full">
-
-            {/* Column 2: Shop */}
-            <div>
-              <h4 className="font-display font-semibold text-lg mb-4">Shop</h4>
-              <ul className="space-y-3">
-                {[
-                  { label: 'All Products', href: '/shop' },
-                  { label: 'Beer', href: '/shop?category=beer' },
-                  { label: 'Wine', href: '/shop?category=wine' },
-                  { label: 'Spirits', href: '/shop?category=spirits' },
-                  { label: 'Soft Drinks', href: '/shop?category=soft-drinks' },
-                ].map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-secondary-300 hover:text-primary-500 transition-colors inline-block"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+              <Truck size={24} />
             </div>
-
-            {/* Column 3: Support*/}
             <div>
-              <h4 className="font-display font-semibold text-lg mb-4">Support</h4>
-              <ul className="space-y-3">
-                {[
-                  { label: 'Contact Us', href: '/contact' },
-                  { label: 'FAQs', href: '/faq' },
-                  { label: 'Shipping Info', href: '/faq' }, // Point to FAQ for now
-                  { label: 'Returns Policy', href: '/faq' }, // Point to FAQ for now
-
-                ].map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-secondary-300 hover:text-primary-500 transition-colors inline-block"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Column 4: Legal (CLEANED) */}
-            <div>
-              <h4 className="font-display font-semibold text-lg mb-4">Legal</h4>
-              <ul className="space-y-3">
-                {[
-                  { label: 'About Us', href: '/about' },
-                  { label: 'Blog', href: '/blog' },
-                  { label: 'Privacy Policy', href: '/privacy' },
-                  { label: 'Terms', href: '/terms' }, // Shortened for mobile fit
-                  { label: 'Admin', href: '/auth/login' }, // Shortened for mobile fit
-                ].map((link) => (
-                  <li key={link.label}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-secondary-300 hover:text-primary-500 transition-colors inline-block"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <h4 className="font-bold text-white mb-1 uppercase tracking-wider text-sm">Swift Delivery</h4>
+              <p className="text-xs leading-relaxed">Same-day delivery within Accra for orders before 2PM.</p>
             </div>
           </div>
-        </div>
-
-        {/* Payment Methods */}
-        <div className="mt-12 pt-8 border-t border-secondary-800">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-
-            <div>
-              <p className="text-sm text-secondary-400 mb-3">We Accept</p>
-              <div className="flex items-center gap-4 flex-wrap">
-
-                {/* Paystack */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-secondary-800 rounded-lg border border-secondary-700">
-                  <CreditCard size={20} className="text-primary-500" />
-                  <span className="text-sm font-medium">Paystack</span>
-                </div>
-
-                {/* MTN Mobile Money */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500 rounded-lg">
-                  <div className="w-5 h-5 bg-black rounded-full flex items-center justify-center">
-                    <span className="text-yellow-500 text-xs font-bold">M</span>
-                  </div>
-                  <span className="text-sm font-semibold text-black">MTN MoMo</span>
-                </div>
-
-                {/* Cash on Delivery */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-secondary-800 rounded-lg border border-secondary-700">
-                  <span className="text-sm font-medium">Cash on Delivery</span>
-                </div>
-              </div>
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+              <RotateCcw size={24} />
             </div>
-
-            {/* Social Links */}
             <div>
-              <p className="text-sm text-secondary-400 mb-3">Connect With Us</p>
-              <div className="flex items-center gap-3">
-                {[
-                  { Icon: Facebook, href: '#', label: 'Facebook' },
-                  { Icon: Twitter, href: '#', label: 'Twitter' },
-                  { Icon: Instagram, href: '#', label: 'Instagram' },
-                  { Icon: Linkedin, href: '#', label: 'LinkedIn' },
-                ].map(({ Icon, href, label }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 bg-secondary-800 hover:bg-primary-600 rounded-lg transition-colors"
-                    aria-label={label}
-                  >
-                    <Icon size={20} />
-                  </a>
-                ))}
-              </div>
+              <h4 className="font-bold text-white mb-1 uppercase tracking-wider text-sm">Easy Returns</h4>
+              <p className="text-xs leading-relaxed">7-day hassle-free return policy on sealed products.</p>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
+            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+              <Sparkles size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-white mb-1 uppercase tracking-wider text-sm">Luxury Gift Wrap</h4>
+              <p className="text-xs leading-relaxed">Complementary premium gift wrapping on all orders.</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-secondary-800 bg-secondary-950">
-        <div className="container-custom py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-sm text-secondary-400">
-            <p>
-              &copy; {currentYear} LiquorShop. All rights reserved.
+      {/* 2. Main Footer Content */}
+      <div className="container-custom py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+
+          {/* Brand Column */}
+          <div className="lg:col-span-4 space-y-6">
+            <Link href="/" className="flex items-center gap-3 group justify-center lg:justify-start">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#e8c97a] rounded-full flex items-center justify-center shadow-lg shadow-gold/20">
+                <span className="font-display font-bold text-[#1a0a2e] text-xl">P</span>
+              </div>
+              <span className="font-display font-bold text-2xl text-[#c9a84c] tracking-tight uppercase">
+                The Perfume Store
+              </span>
+            </Link>
+            <p className="text-sm leading-relaxed max-w-sm text-center lg:text-left">
+              Ghana's premier destination for luxury fragrances. We curate only the finest authentic scents from iconic fashion houses and niche artisanal perfumers across the globe.
             </p>
-            <p className="flex items-center gap-2">
-              <ShieldCheck size={16} className="text-accent-500" />
-              Secure Shopping · SSL Encrypted
-            </p>
+            <div className="flex items-center justify-center lg:justify-start gap-4 pt-2">
+              <a href="#" className="w-10 h-10 flex items-center justify-center bg-[#2d1554] hover:bg-[#c9a84c] hover:text-[#1a0a2e] rounded-full transition-all border border-[rgba(201,168,76,0.1)]" aria-label="Instagram">
+                <Instagram size={18} />
+              </a>
+              <a href="#" className="w-10 h-10 flex items-center justify-center bg-[#2d1554] hover:bg-[#c9a84c] hover:text-[#1a0a2e] rounded-full transition-all border border-[rgba(201,168,76,0.1)]" aria-label="Facebook">
+                <Facebook size={18} />
+              </a>
+              <a href="#" className="w-10 h-10 flex items-center justify-center bg-[#2d1554] hover:bg-[#c9a84c] hover:text-[#1a0a2e] rounded-full transition-all border border-[rgba(201,168,76,0.1)]" aria-label="Twitter">
+                <Twitter size={18} />
+              </a>
+            </div>
+          </div>
+
+          <div className="lg:col-span-1 hidden lg:block" />
+
+          {/* Links Columns */}
+          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-3 gap-8">
+            <div>
+              <h4 className="font-bold text-white mb-6 uppercase tracking-[0.2em] text-[10px]">Collection</h4>
+              <ul className="space-y-4">
+                {footerLinks.shop.map(link => (
+                  <li key={link.label}>
+                    <Link href={link.href} className="text-xs hover:text-[#c9a84c] transition-colors">{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-white mb-6 uppercase tracking-[0.2em] text-[10px]">Client Care</h4>
+              <ul className="space-y-4">
+                {footerLinks.support.map(link => (
+                  <li key={link.label}>
+                    <Link href={link.href} className="text-xs hover:text-[#c9a84c] transition-colors">{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="col-span-2 md:col-span-1">
+              <h4 className="font-bold text-white mb-6 uppercase tracking-[0.2em] text-[10px]">Concierge</h4>
+              <ul className="space-y-4">
+                <li className="flex items-center gap-3 text-xs">
+                  <Mail size={14} className="text-[#c9a84c]" />
+                  <a href={`mailto:${email}`} className="hover:text-[#c9a84c]">{email}</a>
+                </li>
+                <li className="flex items-center gap-3 text-xs">
+                  <Phone size={14} className="text-[#c9a84c]" />
+                  <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-[#c9a84c]">{phone}</a>
+                </li>
+                <li className="flex items-start gap-3 text-xs">
+                  <MapPin size={14} className="text-[#c9a84c] mt-0.5 shrink-0" />
+                  <span>East Legon, Private Showroom<br />Accra, Ghana</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Bottom Bar */}
+      <div className="border-t border-[rgba(201,168,76,0.1)] bg-[#130624]">
+        <div className="container-custom py-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <p className="text-[10px] text-gold-pale/40 uppercase tracking-widest font-medium">
+            © {currentYear} The Perfume Store Ghana. All Rights Reserved.
+          </p>
+          <div className="flex items-center gap-6">
+            <Link href="/privacy" className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Privacy</Link>
+            <Link href="/terms" className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Terms</Link>
+            <Link href="/shipping" className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Shipping</Link>
+          </div>
+          <div className="flex items-center gap-4">
+            <CreditCard size={20} className="text-gold-pale/20" />
+            <span className="text-[10px] uppercase tracking-widest text-gold-pale/20 border border-[rgba(201,168,76,0.1)] px-2 py-1 rounded">SSL Secure</span>
           </div>
         </div>
       </div>

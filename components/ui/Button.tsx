@@ -5,7 +5,8 @@ import { twMerge } from 'tailwind-merge';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+  // added xl for extra large buttons (used on hero sections etc.)
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   fullWidth?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -25,19 +26,20 @@ const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles = 'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-  
+
   const variants = {
-    primary: 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500',
-    secondary: 'bg-secondary-800 text-white hover:bg-secondary-900 focus:ring-secondary-500',
-    outline: 'border border-secondary-300 text-secondary-700 bg-transparent hover:bg-secondary-50 focus:ring-secondary-500',
-    ghost: 'text-secondary-600 hover:bg-secondary-100 hover:text-secondary-900 focus:ring-secondary-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
+    primary: 'bg-brand-deep text-white hover:bg-brand-mid focus:ring-brand-light shadow-sm',
+    secondary: 'bg-brand-gold text-brand-deep hover:bg-brand-gold-light focus:ring-brand-gold-pale shadow-sm',
+    outline: 'border border-brand-border text-brand-deep bg-transparent hover:bg-brand-gold/5 focus:ring-brand-gold',
+    ghost: 'text-brand-muted hover:bg-brand-gold/10 hover:text-brand-deep focus:ring-brand-gold',
+    danger: 'bg-danger text-white hover:bg-danger/90 focus:ring-danger shadow-sm',
   };
 
   const sizes = {
     sm: 'text-xs px-3 py-1.5 gap-1.5',
     md: 'text-sm px-4 py-2 gap-2',
     lg: 'text-base px-6 py-3 gap-2.5',
+    xl: 'text-lg px-8 py-4 gap-3', // extra-large variant for hero/feature buttons
   };
 
   return (

@@ -25,6 +25,19 @@ interface ProductInput {
   discount_percent: number;
   discount_start_at: string | null;
   discount_end_at: string | null;
+
+  // New Fragrance Attributes
+  concentration?: string;
+  scentFamily?: string;
+  scentNotes?: {
+    top: string[];
+    heart: string[];
+    base: string[];
+  };
+  longevity?: string;
+  sillage?: string;
+  gender?: string;
+  occasion?: string[];
 }
 
 // Helper to sanitize promotion data
@@ -62,10 +75,10 @@ export async function createProduct(input: ProductInput) {
 
     // 2. Category Name
     const { data: catData } = await supabase.from('categories').select('name').eq('id', input.category_id).single();
-    
+
     // 3. Product
     const slug = input.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Date.now().toString().slice(-4);
-    
+
     const { data: product, error: prodError } = await supabase
       .from('products')
       .insert({
@@ -80,7 +93,15 @@ export async function createProduct(input: ProductInput) {
         is_featured: input.is_featured,
         discount_percent: promo.percent,
         discount_start_at: promo.start,
-        discount_end_at: promo.end
+        discount_end_at: promo.end,
+        // Map new fields
+        concentration: input.concentration,
+        scentFamily: input.scentFamily,
+        scentNotes: input.scentNotes,
+        longevity: input.longevity,
+        sillage: input.sillage,
+        gender: input.gender,
+        occasion: input.occasion
       })
       .select()
       .single();
@@ -140,7 +161,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
 
     // Update Product
     const { data: catData } = await supabase.from('categories').select('name').eq('id', input.category_id).single();
-    
+
     await supabase.from('products').update({
       title: input.title,
       description: input.description,
@@ -151,7 +172,15 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
       is_featured: input.is_featured,
       discount_percent: promo.percent,
       discount_start_at: promo.start,
-      discount_end_at: promo.end
+      discount_end_at: promo.end,
+      // Map new fields
+      concentration: input.concentration,
+      scentFamily: input.scentFamily,
+      scentNotes: input.scentNotes,
+      longevity: input.longevity,
+      sillage: input.sillage,
+      gender: input.gender,
+      occasion: input.occasion
     }).eq('id', productId);
 
     // Update Inventory Name
@@ -162,7 +191,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     // Variant Sync Logic...
     const inputIds = input.variants.map(v => v.id).filter(Boolean);
     const dbIds = existingVariants?.map(v => v.id) || [];
-    
+
     // Delete
     const toDelete = dbIds.filter(id => !inputIds.includes(id));
     if (toDelete.length > 0) {
@@ -188,7 +217,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
       type: v.type,
       price: v.price,
       stock_deduction: v.stock_deduction,
-      sku: `${input.title.slice(0,3)}-${v.type}-${Date.now()}-${Math.random().toString(36).substring(2,5)}`
+      sku: `${input.title.slice(0, 3)}-${v.type}-${Date.now()}-${Math.random().toString(36).substring(2, 5)}`
     }));
 
     if (toInsert.length > 0) {
@@ -198,7 +227,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     revalidatePath('/shop');
     revalidatePath('/admin/products');
     revalidatePath('/admin/inventory');
-    
+
     return { success: true };
 
   } catch (error: any) {

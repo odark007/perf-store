@@ -3,26 +3,45 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 15, 23, 42;
-  --background-start-rgb: 255, 255, 255;
-  --background-end-rgb: 255, 255, 255;
+  --purple-deep: #1a0a2e;
+  --purple-mid: #2d1554;
+  --purple-light: #4a2080;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-pale: #f5e6b8;
+  --cream: #fdf8f0;
+  --border: rgba(201, 168, 76, 0.25);
+  --border-light: rgba(74, 32, 128, 0.12);
+  --text-muted: #8a7a9e;
+  --text-subtle: #c4b8d4;
 
   /* Layout Variables */
   --header-height: 80px;
   --header-height-mobile: 64px;
   --z-sticky: 50;
+
+  /* Font variables from Next.js */
+  --font-display: var(--font-cormorant);
+  --font-body: var(--font-jost);
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-start-rgb));
+  font-family: var(--font-jost), sans-serif;
+  background-color: var(--cream);
+  color: var(--purple-deep);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+  font-family: var(--font-cormorant), serif;
 }
 
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-
   .container-custom {
     @apply container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl;
   }

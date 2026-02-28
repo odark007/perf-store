@@ -86,7 +86,7 @@ const CartDrawer = () => {
                 </div>
                 <div>
                   <p className="text-lg font-medium text-secondary-900">Your cart is empty</p>
-                  <p className="text-secondary-500">Looks like you haven't added any drinks yet.</p>
+                  <p className="text-secondary-500">Looks like you haven't added any perfume yet.</p>
                 </div>
                 <Button onClick={toggleCart} variant="outline">
                   Continue Shopping

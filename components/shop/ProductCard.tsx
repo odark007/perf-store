@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import SmartImage from '@/components/ui/SmartImage';
-import { ShoppingCart, Minus, Plus, Star } from 'lucide-react';
+import { ShoppingCart, Heart, Sparkles } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { useCartStore } from '@/lib/store';
-import { formatCurrency, getDiscountedPrice } from '@/lib/utils'; // Added getDiscountedPrice
+import { formatCurrency, getDiscountedPrice } from '@/lib/utils';
 
 // Interface for Variants passed from parent
 export interface UIProductVariant {
@@ -27,6 +27,9 @@ export interface ProductCardProps {
   category: string;
   variants: UIProductVariant[];
   isFeatured?: boolean;
+  brand?: string;
+  concentration?: string;
+  scentFamily?: string;
   // NEW: Discount Props
   discountPercent?: number;
   discountStart?: string | null;
@@ -41,17 +44,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
   category,
   variants,
   isFeatured = false,
+  brand = 'Luxury Fragrance',
+  concentration = 'Eau de Parfum',
+  scentFamily = 'Floral',
   discountPercent = 0,
   discountStart,
   discountEnd
 }) => {
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id || '');
   const [isHovered, setIsHovered] = useState(false);
-  const [quantity, setQuantity] = useState(1);
 
   // 1. Get Cart
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
+  const toggleCart = useCartStore((state) => state.toggleCart);
 
   const selectedVariant = variants.find(v => v.id === selectedVariantId) || variants[0];
 
@@ -85,158 +91,138 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const isOutOfStock = masterStock <= 0;
   const isCartLimitReached = maxAddable < 1;
 
-  useEffect(() => {
-    setQuantity(1);
-  }, [selectedVariantId]);
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  const getBadgeVariant = (type: string) => {
-    if (type === 'single') return 'single';
-    if (type === 'pack') return 'pack';
-    if (type === 'crate') return 'crate';
-    return 'primary';
-  };
-
-  const handleIncrement = () => {
-    setQuantity(prev => {
-      const next = prev + 1;
-      if (next > maxAddable) return prev;
-      return next;
-    });
-  };
-
-  const handleDecrement = () => {
-    setQuantity(prev => Math.max(prev - 1, 1));
-  };
-
-  const handleAddToCart = () => {
-    if (isOutOfStock || quantity > maxAddable) {
-      return;
-    }
+    if (isOutOfStock || isCartLimitReached) return;
 
     addItem({
       variantId: selectedVariantId,
       productId: id,
       title: title,
       variantName: selectedVariant.name,
-      price: finalPrice, // <--- Send Discounted Price to Cart
-      quantity: quantity,
+      price: finalPrice,
+      quantity: 1,
       image: image,
       stockDeduction: currentVariantDeduction,
       masterStockTotal: masterStock
     });
 
-    setQuantity(1);
+    toggleCart();
   };
 
   return (
     <div
-      className="group card card-hover relative overflow-hidden flex flex-col h-full"
+      className="group bg-white rounded-2xl border border-brand-border overflow-hidden hover:shadow-2xl hover:shadow-brand-mid/5 transition-all duration-500 flex flex-col h-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/products/${slug}`} className="block relative">
-        <div className="relative aspect-[3/4] bg-secondary-100 overflow-hidden rounded-t-xl">
-          <SmartImage
-            src={image || 'https://placehold.co/600x800/png?text=No+Image'}
-            alt={title}
-            fill
-            className={`object-cover transition-all duration-500 ${isHovered ? 'scale-110' : 'scale-100'}`}
-          />
+      <Link href={`/products/${slug}`} className="block relative aspect-[4/5] overflow-hidden bg-brand-cream/30">
+        <SmartImage
+          src={image || 'https://placehold.co/600x800/png?text=No+Image'}
+          alt={title}
+          fill
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
+        />
 
-          <div className="absolute top-3 left-3 flex flex-col gap-2 items-start">
-            <Badge variant={getBadgeVariant(selectedVariant?.type || 'single')} size="sm">
-              {selectedVariant?.name}
-            </Badge>
+        {/* Hover Overlay Actions */}
+        <div className={`absolute inset-0 bg-brand-deep/20 backdrop-blur-[2px] flex items-center justify-center gap-3 transition-opacity duration-300 ${isHovered ? 'opacity-100' : 'opacity-0'}`}>
+          <button
+            className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-brand-deep hover:bg-brand-gold hover:text-white transition-all shadow-xl"
+            title="Add to Wishlist"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <Heart size={18} />
+          </button>
+          <button
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-xl ${isOutOfStock || isCartLimitReached
+                ? 'bg-gray-400 text-white cursor-not-allowed'
+                : 'bg-brand-gold text-brand-deep hover:scale-110 active:scale-95'
+              }`}
+            onClick={handleAddToCart}
+            disabled={isOutOfStock || isCartLimitReached}
+            title={isOutOfStock ? 'Out of Stock' : isCartLimitReached ? 'Limit reached' : 'Quick Add'}
+          >
+            <ShoppingCart size={20} />
+          </button>
+        </div>
 
-            {/* Discount Badge (Prioritized over generic Featured star) */}
-            {isOnSale ? (
-              <Badge className="bg-red-500 text-white border-red-600 font-bold shadow-sm" size="sm">
-                -{discountPercent}%
-              </Badge>
-            ) : isFeatured ? (
-              <Badge className="bg-yellow-400 text-yellow-900 border-yellow-500 font-bold flex items-center gap-1 shadow-sm" size="sm">
-                <Star size={10} fill="currentColor" /> Special
-              </Badge>
-            ) : null}
-          </div>
+        {/* Badges */}
+        <div className="absolute top-3 left-3 flex flex-col gap-2">
+          {isFeatured && (
+            <div className="bg-brand-gold text-brand-deep text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-wider flex items-center gap-1">
+              <Sparkles size={10} fill="currentColor" /> Featured
+            </div>
+          )}
+          {isOnSale && (
+            <div className="bg-danger text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg uppercase tracking-wider">
+              -{discountPercent}% OFF
+            </div>
+          )}
         </div>
       </Link>
 
-      <div className="p-4 flex flex-col flex-1">
-        <p className="text-xs text-secondary-500 uppercase tracking-wider mb-1">{category}</p>
-        <Link href={`/products/${slug}`}>
-          <h3 className="text-base font-semibold text-secondary-900 line-clamp-2 mb-2">{title}</h3>
-        </Link>
+      <div className="p-4 md:p-5 flex flex-col flex-1 space-y-3">
+        {/* Brand & Scent Family */}
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] md:text-[11px] font-bold uppercase tracking-[0.2em] text-brand-gold truncate">
+            {brand}
+          </span>
+          <span className="text-[9px] md:text-[10px] font-medium uppercase text-brand-muted shrink-0 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-brand-light/30" />
+            {scentFamily}
+          </span>
+        </div>
 
-        <div className="mt-auto">
-          {variants.length > 1 && (
-            <div className="mb-4">
-              <select
-                value={selectedVariantId}
-                onChange={(e) => setSelectedVariantId(e.target.value)}
-                title="Select product variant"
-                className="w-full px-3 py-2 text-sm bg-secondary-50 border border-secondary-200 rounded-lg outline-none cursor-pointer focus:border-primary-500 transition-colors"
-              >
-                {variants.map((variant) => (
-                  <option key={variant.id} value={variant.id}>
-                    {variant.name} - {formatCurrency(variant.price)}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+        {/* Title */}
+        <div className="flex-1">
+          <Link href={`/products/${slug}`}>
+            <h3 className="text-sm md:text-base font-display font-semibold text-brand-deep line-clamp-1 group-hover:text-brand-gold transition-colors">
+              {title}
+            </h3>
+            <p className="text-[10px] md:text-xs text-brand-muted mt-1">
+              {concentration}
+            </p>
+          </Link>
+        </div>
 
-          <div className="flex flex-wrap items-end justify-between gap-2 mb-4">
-            <div className="flex flex-col">
-              {/* Show Strikethrough if on sale */}
-              {isOnSale && (
-                <span className="text-xs text-secondary-400 line-through font-medium">
-                  {formatCurrency(originalPrice)}
-                </span>
-              )}
-              <span className={`text-xl font-bold ${isOnSale ? 'text-red-600' : 'text-secondary-900'}`}>
-                {formatCurrency(finalPrice)}
+        {/* Size Pill Selector */}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {variants.map((v) => (
+            <button
+              key={v.id}
+              onClick={() => setSelectedVariantId(v.id)}
+              className={`px-2 py-1 text-[9px] md:text-[10px] font-bold rounded-full border transition-all ${selectedVariantId === v.id
+                  ? 'bg-brand-deep border-brand-deep text-white shadow-md shadow-brand-deep/20'
+                  : 'bg-white border-brand-border text-brand-muted hover:border-brand-gold hover:text-brand-gold'
+                }`}
+            >
+              {v.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Price Section */}
+        <div className="pt-2 flex items-center justify-between gap-2 border-t border-brand-border/50">
+          <div className="flex items-baseline gap-2">
+            <span className={`text-base md:text-lg font-bold ${isOnSale ? 'text-danger' : 'text-brand-deep'}`}>
+              {formatCurrency(finalPrice)}
+            </span>
+            {isOnSale && (
+              <span className="text-xs text-brand-muted line-through font-medium">
+                {formatCurrency(originalPrice)}
               </span>
-            </div>
-
-            <div className="flex items-center border border-secondary-200 rounded-lg bg-white h-9">
-              <button
-                onClick={(e) => { e.preventDefault(); handleDecrement(); }}
-                title="Decrease quantity"
-                className="p-1.5 h-full flex items-center justify-center text-secondary-500 hover:text-primary-600 hover:bg-secondary-50 rounded-l-lg transition-colors disabled:opacity-30"
-                disabled={quantity <= 1 || isOutOfStock || isCartLimitReached}
-              >
-                <Minus size={16} />
-              </button>
-              <span className="w-8 text-center text-sm font-medium text-secondary-900 leading-none">
-                {quantity}
-              </span>
-              <button
-                onClick={(e) => { e.preventDefault(); handleIncrement(); }}
-                title="Increase quantity"
-                className="p-1.5 h-full flex items-center justify-center text-secondary-500 hover:text-primary-600 hover:bg-secondary-50 rounded-r-lg transition-colors disabled:opacity-30"
-                disabled={quantity >= maxAddable || isOutOfStock || isCartLimitReached}
-              >
-                <Plus size={16} />
-              </button>
-            </div>
+            )}
           </div>
 
-          <Button
-            onClick={handleAddToCart}
-            variant="primary"
-            size="md"
-            fullWidth
-            leftIcon={isCartLimitReached && !isOutOfStock ? undefined : <ShoppingCart size={18} />}
-            disabled={isOutOfStock || isCartLimitReached}
-          >
-            {isOutOfStock
-              ? 'Out of Stock'
-              : isCartLimitReached
-                ? 'Limit in Cart'
-                : 'Add to Cart'
-            }
-          </Button>
+          {isOutOfStock ? (
+            <span className="text-[10px] font-bold text-danger uppercase tracking-wider">Out of Stock</span>
+          ) : isCartLimitReached ? (
+            <span className="text-[10px] font-bold text-brand-muted uppercase tracking-wider">In Cart</span>
+          ) : (
+            <span className="text-[10px] font-bold text-success uppercase tracking-wider animate-pulse-subtle">Available</span>
+          )}
         </div>
       </div>
     </div>

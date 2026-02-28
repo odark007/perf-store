@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Minus, Plus, Check, AlertCircle, Star, Clock } from 'lucide-react';
+import { ShoppingCart, Minus, Plus, Check, AlertCircle, Star, Clock, Droplets, Wind, Sparkles, Gift } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import VariantSelector from './VariantSelector';
@@ -19,23 +19,18 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
   const [selectedId, setSelectedId] = useState(variants[0]?.id || '');
   const [quantity, setQuantity] = useState(1);
 
-  // 1. Get Cart State
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
 
   const selectedVariant = variants.find(v => v.id === selectedId) || variants[0];
-  
-  // 2. Data Check
   const masterStock = Number(selectedVariant?.master_stock) || 0;
   const currentVariantDeduction = Math.max(1, Number(selectedVariant?.stock_deduction) || 1);
 
-  // 3. Price Calculation (Discount Logic)
   const { finalPrice, isOnSale, originalPrice } = getDiscountedPrice(
     selectedVariant.price,
     product
   );
 
-  // 4. Calculate Cart Usage
   const liquidInCart = cartItems
     .filter(item => item.productId === product.id)
     .reduce((total, item) => {
@@ -43,7 +38,6 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
       return total + (item.quantity * itemDeduction);
     }, 0);
 
-  // 5. Calculate Limits
   const remainingLiquid = Math.max(0, masterStock - liquidInCart);
   const maxAddable = Math.floor(remainingLiquid / currentVariantDeduction);
 
@@ -54,16 +48,12 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
     setQuantity(1);
   }, [selectedId]);
 
-  // Track View Item
   useEffect(() => {
-    // FIX: Use 'variants' prop instead of 'product.variants' to avoid TS undefined error
-    const basePrice = variants[0]?.price || 0;
-    
     sendGAEvent('view_item', {
       currency: 'GHS',
       value: product.discount_percent > 0
-        ? basePrice * (1 - product.discount_percent / 100)
-        : basePrice,
+        ? (variants[0]?.price || 0) * (1 - product.discount_percent / 100)
+        : (variants[0]?.price || 0),
       items: [{
         item_id: product.id,
         item_name: product.title,
@@ -71,17 +61,15 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
         item_brand: product.brand
       }]
     });
-  }, [product, variants]); // Added variants to dependency array
+  }, [product, variants]);
 
   const handleAddToCart = () => {
-    // 1. Validation
     if (isOutOfStock) return;
     if (quantity > maxAddable) {
       alert(`Limit reached! You can only add ${maxAddable} more of this item.`);
       return;
     }
 
-    // 2. GA4 Track
     sendGAEvent('add_to_cart', {
       currency: 'GHS',
       value: finalPrice * quantity,
@@ -95,7 +83,6 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
       }]
     });
 
-    // 3. Add to Store
     addItem({
       variantId: selectedVariant.id,
       productId: product.id,
@@ -112,7 +99,6 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
     setQuantity(1);
   };
 
-  // Helper to format promo dates
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB', {
       day: 'numeric',
@@ -121,131 +107,204 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
   };
 
   return (
-    <div className="flex flex-col h-full justify-center">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex gap-2 mb-2">
-          {product.brand && (
-            <span className="text-xs font-bold text-primary-600 uppercase tracking-wide">
-              {product.brand}
+    <div className="flex flex-col space-y-10">
+
+      {/* 1. Header & Brand */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex gap-3 items-center">
+            {product.brand && (
+              <span className="text-sm font-bold text-brand-gold uppercase tracking-[0.3em]">
+                {product.brand}
+              </span>
+            )}
+            <div className="w-1.5 h-1.5 rounded-full bg-brand-gold/20" />
+            <span className="text-xs text-brand-muted uppercase tracking-widest">
+              {product.concentration || 'Parfum'}
             </span>
-          )}
-          <span className="text-xs text-secondary-400">•</span>
-          <span className="text-xs text-secondary-500 uppercase tracking-wide">
-            {product.category}
-          </span>
+          </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-gold/10 border border-brand-gold/20 text-brand-gold">
+            <Sparkles size={12} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Authentic</span>
+          </div>
         </div>
-        
-        <h1 className="text-3xl md:text-4xl font-display font-bold text-secondary-900 mb-4">
+
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-brand-deep leading-tight">
           {product.title}
         </h1>
 
-        {/* PROMO BADGES ROW */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {isOnSale ? (
-             <>
-               <Badge className="bg-red-500 text-white border-red-600 font-bold shadow-sm inline-flex">
-                 Limited Time Offer: {product.discount_percent}% OFF
-               </Badge>
-               
-               {product.discount_end_at && (
-                 <span className="text-xs font-medium text-red-700 bg-red-50 px-2 py-1 rounded-full border border-red-100 flex items-center gap-1">
-                   <Clock size={12} />
-                   {product.discount_start_at 
-                     ? `${formatDate(product.discount_start_at)} - ${formatDate(product.discount_end_at)}` 
-                     : `Ends ${formatDate(product.discount_end_at)}`
-                   }
-                 </span>
-               )}
-             </>
-          ) : product.is_featured ? (
-            <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200 inline-flex gap-1">
-              <Star size={14} fill="currentColor" /> Featured Selection
-            </Badge>
-          ) : null}
-        </div>
-
-        {/* Price Display */}
-        <div className="flex items-end gap-4">
-          <div className="flex flex-col">
-             {isOnSale && (
-               <span className="text-lg text-secondary-400 line-through font-medium mb-1">
-                 {formatCurrency(originalPrice)}
-               </span>
-             )}
-             <p className={`text-4xl font-bold ${isOnSale ? 'text-red-600' : 'text-secondary-900'}`}>
-               {formatCurrency(finalPrice)}
-             </p>
+        {/* Promo Row */}
+        {(isOnSale || product.is_featured) && (
+          <div className="flex flex-wrap items-center gap-3">
+            {isOnSale && (
+              <Badge className="bg-danger text-white border-transparent px-4 py-1 font-bold text-[10px] tracking-widest uppercase">
+                {product.discount_percent}% LUXURY SALE
+              </Badge>
+            )}
+            {product.is_featured && (
+              <Badge className="bg-brand-gold text-brand-deep border-transparent px-4 py-1 font-bold text-[10px] tracking-widest uppercase">
+                Maison's Pick
+              </Badge>
+            )}
           </div>
-          
-          {isOutOfStock ? (
-            <span className="text-red-600 font-medium flex items-center gap-1 mb-2 pb-1">
-              <AlertCircle size={18} /> Out of Stock
-            </span>
-          ) : (
-            <span className="text-green-600 font-medium flex items-center gap-1 mb-2 pb-1">
-              <Check size={18} /> In Stock
-            </span>
-          )}
+        )}
+      </div>
+
+      {/* 2. Scent Identity (Olfactory Pyramid) */}
+      {(product.scentNotes || product.scentFamily) && (
+        <div className="p-8 bg-white border border-brand-border rounded-3xl shadow-sm space-y-8">
+          <div className="flex justify-between items-center border-b border-brand-border pb-4">
+            <h3 className="font-display text-xl font-bold flex items-center gap-2 italic">
+              Olfactive Journey
+            </h3>
+            {product.scentFamily && (
+              <span className="text-[10px] bg-brand-cream/50 px-3 py-1 rounded-full font-bold uppercase tracking-widest border border-brand-border text-brand-muted">
+                {product.scentFamily} Famille
+              </span>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold block">Top Notes</span>
+              <p className="text-sm text-brand-deep font-medium leading-relaxed">
+                {product.scentNotes?.top.join(', ') || 'Sparkling Citrus, Fresh Accords'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold block">Heart Notes</span>
+              <p className="text-sm text-brand-deep font-medium leading-relaxed">
+                {product.scentNotes?.heart.join(', ') || 'Floral Bloom, Spicy Echoes'}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold block">Base Notes</span>
+              <p className="text-sm text-brand-deep font-medium leading-relaxed">
+                {product.scentNotes?.base.join(', ') || 'Velvet Musk, Sandalwood'}
+              </p>
+            </div>
+          </div>
+
+          {/* Performance Attributes */}
+          <div className="grid grid-cols-2 gap-4 pt-4">
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-brand-cream/30 border border-brand-border/50">
+              <Clock size={16} className="text-brand-gold" />
+              <div>
+                <span className="text-[8px] uppercase font-bold text-brand-muted block">Longevity</span>
+                <span className="text-xs font-bold text-brand-deep uppercase">{product.longevity || '6-8 hrs'}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-brand-cream/30 border border-brand-border/50">
+              <Wind size={16} className="text-brand-gold" />
+              <div>
+                <span className="text-[8px] uppercase font-bold text-brand-muted block">Sillage</span>
+                <span className="text-xs font-bold text-brand-deep uppercase">{product.sillage || 'Strong'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Pricing & Scenography */}
+      <div className="space-y-8">
+        <div className="flex items-end gap-6 pb-2 border-b border-brand-border">
+          <div className="flex flex-col">
+            {isOnSale && (
+              <span className="text-lg text-brand-muted line-through font-medium mb-1">
+                {formatCurrency(originalPrice)}
+              </span>
+            )}
+            <p className={`text-5xl font-display font-medium ${isOnSale ? 'text-danger' : 'text-brand-deep'}`}>
+              {formatCurrency(finalPrice)}
+            </p>
+          </div>
+          <div className="mb-2">
+            {isOutOfStock ? (
+              <Badge className="bg-danger/10 text-danger border-danger/20 flex items-center gap-1.5">
+                <AlertCircle size={14} /> Unavailable
+              </Badge>
+            ) : (
+              <Badge className="bg-success/10 text-success border-success/20 flex items-center gap-1.5">
+                <Check size={14} /> At the Boutique
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Size Selector */}
+        <div className="space-y-4">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-deep">Select Presentation</p>
+          <VariantSelector
+            variants={variants}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+          />
+        </div>
+
+        {/* Quantity & Action */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+          <div className="flex items-center border border-brand-border rounded-2xl overflow-hidden bg-white shadow-sm h-14">
+            <button
+              onClick={() => setQuantity(q => Math.max(1, q - 1))}
+              disabled={quantity <= 1 || isOutOfStock || isCartLimitReached}
+              className="px-5 transition-colors hover:bg-brand-cream disabled:opacity-30"
+              aria-label="Decrease quantity"
+            >
+              <Minus size={18} className="text-brand-deep" />
+            </button>
+            <span className="w-12 text-center font-bold text-lg text-brand-deep">{quantity}</span>
+            <button
+              onClick={() => setQuantity(q => Math.min(maxAddable, q + 1))}
+              disabled={quantity >= maxAddable || isOutOfStock || isCartLimitReached}
+              className="px-5 transition-colors hover:bg-brand-cream disabled:opacity-30"
+              aria-label="Increase quantity"
+            >
+              <Plus size={18} className="text-brand-deep" />
+            </button>
+          </div>
+
+          <Button
+            size="xl"
+            fullWidth
+            onClick={handleAddToCart}
+            disabled={isOutOfStock || isCartLimitReached}
+            className={`h-14 font-bold uppercase tracking-widest text-xs transition-all duration-500 rounded-2xl border-none shadow-xl ${isOutOfStock || isCartLimitReached
+              ? 'bg-brand-muted text-white cursor-not-allowed opacity-50'
+              : 'bg-brand-deep text-white hover:bg-[#2d1554] shadow-brand-deep/20'
+              }`}
+            leftIcon={isCartLimitReached && !isOutOfStock ? undefined : <ShoppingCart className="mr-2" size={18} />}
+          >
+            {isOutOfStock
+              ? 'Maison Restock Soon'
+              : isCartLimitReached
+                ? 'Maximum in Cart'
+                : 'Acquire Scent'
+            }
+          </Button>
+        </div>
+
+        {/* Luxury Values */}
+        <div className="grid grid-cols-2 gap-4 py-6 border-y border-brand-border">
+          <div className="flex items-center gap-3 text-brand-muted">
+            <Gift size={16} className="text-brand-gold" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Luxury Gift Wrap Available</span>
+          </div>
+          <div className="flex items-center gap-3 text-brand-muted">
+            <Droplets size={16} className="text-brand-gold" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Meticulously Stored</span>
+          </div>
         </div>
       </div>
 
-      {/* Selector */}
-      <div className="mb-8">
-        <p className="text-sm font-medium text-secondary-700 mb-2">Select Size / Pack:</p>
-        <VariantSelector 
-          variants={variants} 
-          selectedId={selectedId} 
-          onSelect={setSelectedId} 
-        />
-      </div>
-
-      {/* Action Row */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-8">
-        {/* Quantity */}
-        <div className="flex items-center border-2 border-secondary-200 rounded-xl w-full sm:w-auto bg-white">
-          <button 
-            onClick={() => setQuantity(q => Math.max(1, q - 1))}
-            disabled={quantity <= 1 || isOutOfStock || isCartLimitReached}
-            className="p-3 text-secondary-500 hover:text-primary-600 disabled:opacity-30"
-          >
-            <Minus size={20} />
-          </button>
-          <span className="w-12 text-center font-bold text-lg">{quantity}</span>
-          <button 
-            onClick={() => setQuantity(q => Math.min(maxAddable, q + 1))}
-            disabled={quantity >= maxAddable || isOutOfStock || isCartLimitReached}
-            className="p-3 text-secondary-500 hover:text-primary-600 disabled:opacity-30"
-          >
-            <Plus size={20} />
-          </button>
-        </div>
-
-        {/* Add Button */}
-        <Button 
-          size="lg" 
-          fullWidth 
-          onClick={handleAddToCart}
-          disabled={isOutOfStock || isCartLimitReached}
-          className="h-14 text-lg shadow-lg shadow-primary-500/20"
-          leftIcon={isCartLimitReached && !isOutOfStock ? undefined : <ShoppingCart className="mr-2" />}
-        >
-          {isOutOfStock 
-            ? 'Sold Out' 
-            : isCartLimitReached 
-              ? 'Limit in Cart' 
-              : 'Add to Cart'
-          }
-        </Button>
-      </div>
-
-      {/* Description */}
-      <div className="prose prose-sm text-secondary-600 max-w-none border-t border-secondary-100 pt-6">
-        <h3 className="text-lg font-bold text-secondary-900 mb-2">Product Description</h3>
-        <p className="whitespace-pre-line leading-relaxed">
-          {product.description || "No description available for this product."}
+      {/* 4. Description */}
+      <div className="space-y-6 pt-6">
+        <h3 className="font-display text-2xl font-bold text-brand-deep italic">The Story</h3>
+        <p className="text-sm text-brand-muted leading-relaxed whitespace-pre-line font-medium border-l-2 border-brand-gold/20 pl-6 italic">
+          {product.description || "No description available for this masterpiece."}
         </p>
       </div>
+
     </div>
   );
 };

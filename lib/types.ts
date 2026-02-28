@@ -6,6 +6,27 @@ export interface Category {
   image_url?: string | null;
 }
 
+export type FragranceSize = '30ml' | '50ml' | '100ml' | '200ml';
+
+export type FragranceConcentration = 'EDT' | 'EDP' | 'Parfum' | 'Cologne' | 'Body Mist';
+
+export type ScentFamily =
+  | 'Floral'
+  | 'Woody'
+  | 'Oriental'
+  | 'Fresh'
+  | 'Citrus'
+  | 'Aquatic'
+  | 'Gourmand'
+  | 'Chypre'
+  | 'Fougère';
+
+export interface ScentNotes {
+  top: string[];
+  heart: string[];
+  base: string[];
+}
+
 export interface Product {
   id: string;
   title: string;
@@ -21,13 +42,22 @@ export interface Product {
   discount_percent: number;
   discount_start_at?: string | null; // ISO Date String
   discount_end_at?: string | null;   // ISO Date String
+
+  // NEW perfume-specific fields:
+  concentration?: FragranceConcentration;
+  scentFamily?: ScentFamily;
+  scentNotes?: ScentNotes;
+  longevity?: '2-4hrs' | '4-6hrs' | '6-8hrs' | '8+hrs';
+  sillage?: 'Intimate' | 'Moderate' | 'Strong' | 'Massive';
+  occasion?: string[];
+  gender?: 'mens' | 'womens' | 'unisex';
 }
 
 export interface ProductVariant {
   id: string;
   product_id: string;
-  name: string; // e.g., 'Single', '6-Pack'
-  type: 'single' | 'pack' | 'crate';
+  name: string; // e.g., '100ml'
+  type: 'single' | 'pack' | 'crate'; // Keep for compatibility if needed, but 'size' is mapping to 'name'
   price: number;
   stock_deduction: number;
   sku: string;
@@ -35,6 +65,7 @@ export interface ProductVariant {
     current_stock_level: number;
   };
   stock?: number;
+  size?: FragranceSize; // New field
 }
 
 export interface CartItem {

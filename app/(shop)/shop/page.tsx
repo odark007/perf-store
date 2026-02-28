@@ -1,7 +1,5 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
-import ProductCard from '@/components/shop/ProductCard';
-import ShopSidebar from '@/components/shop/filters/ShopSidebar';
 import ShopLayoutClient from '@/components/shop/ShopLayoutClient';
 
 export const dynamic = 'force-dynamic';
@@ -15,12 +13,13 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const supabase = await createClient();
 
   // 1. Parse Filters
-  const categorySlug = params.category as string; // This is now 'beer', 'wine', etc.
+  const categorySlug = params.category as string;
   const brand = params.brand as string;
-  const type = params.type as string;
+  const concentration = params.concentration as string;
+  const scentFamily = params.scent_family as string;
   const featured = params.featured === 'true';
   const minPrice = Number(params.min) || 0;
-  const maxPrice = Number(params.max) || 10000;
+  const maxPrice = Number(params.max) || 20000;
   const sort = (params.sort as string) || 'newest';
   const queryTerm = (params.q as string) || '';
 
@@ -37,19 +36,22 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
     if (cat) {
       targetCategoryId = cat.id;
     } else {
-      // If slug provided but not found, we should probably return 0 results
-      // or handle it gracefully. We'll set a dummy ID to ensure query returns empty.
       targetCategoryId = '00000000-0000-0000-0000-000000000000';
     }
   }
 
-  // 3. Fetch Metadata (Categories & Brands)
-  const { data: categories } = await supabase.from('categories').select('id, name, slug').order('name');
+  // 3. Fetch Metadata (Categories, Brands, Concentration, Scent Family)
+  const [categoriesRes, productsMetaRes] = await Promise.all([
+    supabase.from('categories').select('id, name, slug').order('name'),
+    supabase.from('products').select('brand, concentration, scentFamily')
+  ]);
 
-  // Get distinct brands
-  const { data: allProducts } = await supabase.from('products').select('brand');
-  // @ts-ignore
-  const uniqueBrands = Array.from(new Set(allProducts?.map(p => p.brand).filter(Boolean)));
+  const categories = categoriesRes.data || [];
+  const allProductsMeta = productsMetaRes.data || [];
+
+  const uniqueBrands = Array.from(new Set(allProductsMeta.map(p => p.brand).filter(Boolean))).sort();
+  const uniqueConcentrations = Array.from(new Set(allProductsMeta.map(p => p.concentration).filter(Boolean))).sort();
+  const uniqueScentFamilies = Array.from(new Set(allProductsMeta.map(p => p.scentFamily).filter(Boolean))).sort();
 
   // 4. Build Main Product Query
   let query = supabase
@@ -62,32 +64,26 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
       )
     `);
 
-  // Apply ID Filter (Not Slug)
+  // Apply Filters
   if (targetCategoryId) query = query.eq('category_id', targetCategoryId);
-
   if (brand) query = query.eq('brand', brand);
+  if (concentration) query = query.eq('concentration', concentration);
+  if (scentFamily) query = query.eq('scentFamily', scentFamily);
   if (featured) query = query.eq('is_featured', true);
   if (queryTerm) query = query.ilike('title', `%${queryTerm}%`);
 
-  if (type) query = query.eq('variants.type', type);
   if (minPrice > 0) query = query.gte('variants.price', minPrice);
-  if (maxPrice < 10000) query = query.lte('variants.price', maxPrice);
+  if (maxPrice < 20000) query = query.lte('variants.price', maxPrice);
 
   switch (sort) {
     case 'name_asc': query = query.order('title', { ascending: true }); break;
+    case 'price_asc': query = query.order('variants(price)', { ascending: true }); break;
+    case 'price_desc': query = query.order('variants(price)', { ascending: false }); break;
     case 'newest':
     default: query = query.order('created_at', { ascending: false }); break;
   }
 
   const { data: products, error } = await query;
-
-  // DEBUG LOG (Check your VS Code Terminal)
-  if (products && products.length > 0) {
-    const fanta = products.find((p: any) => p.title.includes('Fanta'));
-    if (fanta) {
-      console.log("SERVER DATA CHECK:", JSON.stringify(fanta.variants, null, 2));
-    }
-  }
 
   if (error) {
     console.error("Shop Error:", error);
@@ -96,8 +92,10 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   return (
     <ShopLayoutClient
-      categories={categories || []}
+      categories={categories}
       brands={uniqueBrands as string[]}
+      concentrations={uniqueConcentrations as string[]}
+      scentFamilies={uniqueScentFamilies as string[]}
       products={products || []}
     />
   );

@@ -39,7 +39,7 @@ const CampaignCarousel: React.FC<Props> = ({ campaigns }) => {
   }, [isPaused, nextSlide]);
 
   return (
-    <div 
+    <div
       className="relative group"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
@@ -51,7 +51,7 @@ const CampaignCarousel: React.FC<Props> = ({ campaigns }) => {
       </div>
 
       {/* 2. Navigation Arrows (Visible on Hover) */}
-      <button 
+      <button
         onClick={prevSlide}
         className="absolute top-1/2 left-4 md:left-8 -translate-y-1/2 z-20 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-x-4 group-hover:translate-x-0 border border-white/10"
         aria-label="Previous Slide"
@@ -59,7 +59,7 @@ const CampaignCarousel: React.FC<Props> = ({ campaigns }) => {
         <ChevronLeft size={24} />
       </button>
 
-      <button 
+      <button
         onClick={nextSlide}
         className="absolute top-1/2 right-4 md:right-8 -translate-y-1/2 z-20 p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-4 group-hover:translate-x-0 border border-white/10"
         aria-label="Next Slide"
@@ -75,7 +75,7 @@ const CampaignCarousel: React.FC<Props> = ({ campaigns }) => {
             onClick={() => goToSlide(index)}
             className={`
               h-2 rounded-full transition-all duration-300 
-              ${index === currentIndex ? 'w-8 bg-amber-500' : 'w-2 bg-white/30 hover:bg-white/60'}
+              ${index === currentIndex ? 'w-8 bg-brand-gold' : 'w-2 bg-brand-deep/20 hover:bg-brand-deep/40'}
             `}
             aria-label={`Go to slide ${index + 1}`}
           />
@@ -83,7 +83,7 @@ const CampaignCarousel: React.FC<Props> = ({ campaigns }) => {
       </div>
 
       {/* Slide Counter (Optional aesthetic touch) */}
-      <div className="absolute bottom-6 right-8 z-20 text-white/40 text-xs font-mono hidden md:block">
+      <div className="absolute bottom-6 right-8 z-20 text-brand-deep/40 text-xs font-mono hidden md:block">
         {currentIndex + 1} / {campaigns.length}
       </div>
     </div>

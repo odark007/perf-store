@@ -56,58 +56,58 @@ const PostForm: React.FC<Props> = ({ initialData }) => {
 
   return (
     <form onSubmit={handleSubmit} className="max-w-5xl mx-auto space-y-8 pb-20">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button type="button" variant="outline" onClick={() => router.back()}>
             <ArrowLeft size={20} />
           </Button>
-          <h1 className="text-2xl font-bold text-secondary-900">
+          <h1 className="text-3xl font-display font-bold text-brand-deep italic">
             {isEditMode ? 'Edit Post' : 'New Blog Post'}
           </h1>
         </div>
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input 
-              type="checkbox" 
-              checked={isPublished} 
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={isPublished}
               onChange={e => setIsPublished(e.target.checked)}
-              className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+              className="w-5 h-5 text-brand-gold rounded border-brand-border focus:ring-brand-gold"
             />
-            <span className="font-medium text-secondary-900">Publish Immediately</span>
+            <span className="font-medium text-brand-deep group-hover:text-brand-gold transition-colors">Publish Immediately</span>
           </label>
-          <Button type="submit" isLoading={loading} leftIcon={<Save size={18} />}>
+          <Button type="submit" isLoading={loading} leftIcon={<Save size={18} />} className="px-8 bg-brand-deep hover:bg-brand-mid">
             Save Post
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-xl border border-secondary-200 shadow-sm space-y-4">
             <div>
               <label className="block text-sm font-bold text-secondary-900 mb-1">Article Title</label>
-              <input 
-                required 
-                value={title} 
-                onChange={e => setTitle(e.target.value)} 
+              <input
+                required
+                value={title}
+                onChange={e => setTitle(e.target.value)}
                 className="w-full p-2 border rounded-lg text-lg font-medium"
-                placeholder="e.g. The 5 Best Wines for Christmas" 
+                placeholder="e.g. The 5 Best Wines for Christmas"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-bold text-secondary-900 mb-1">Short Excerpt (SEO)</label>
-              <textarea 
-                required 
-                rows={3} 
-                value={excerpt} 
-                onChange={e => setExcerpt(e.target.value)} 
+              <textarea
+                required
+                rows={3}
+                value={excerpt}
+                onChange={e => setExcerpt(e.target.value)}
                 className="w-full p-2 border rounded-lg text-sm text-secondary-600"
-                placeholder="A brief summary shown on the blog list page..." 
+                placeholder="A brief summary shown on the blog list page..."
               />
             </div>
 
@@ -122,10 +122,10 @@ const PostForm: React.FC<Props> = ({ initialData }) => {
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-xl border border-secondary-200 shadow-sm">
             <h3 className="font-bold text-secondary-900 mb-4">Cover Image</h3>
-            <ImageUpload 
-              value={image} 
-              onChange={setImage} 
-              onRemove={() => setImage('')} 
+            <ImageUpload
+              value={image}
+              onChange={setImage}
+              onRemove={() => setImage('')}
               folder="blog"
               bucket="blog-images"
             />

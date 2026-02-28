@@ -1,32 +1,35 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Cormorant_Garamond, Jost } from "next/font/google";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import "./globals.css";
 
 // Font Configuration
-const inter = Inter({
+const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  variable: "--font-inter",
+  weight: ["300", "400", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-display",
   display: "swap",
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
+const jost = Jost({
   subsets: ["latin"],
-  variable: "--font-plus-jakarta",
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body",
   display: "swap",
 });
 
 // Determine Base URL for SEO
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL 
-  ? (process.env.NEXT_PUBLIC_SITE_URL.startsWith('http') 
-      ? process.env.NEXT_PUBLIC_SITE_URL 
-      : `https://${process.env.NEXT_PUBLIC_SITE_URL}`)
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
+  ? (process.env.NEXT_PUBLIC_SITE_URL.startsWith('http')
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : `https://${process.env.NEXT_PUBLIC_SITE_URL}`)
   : 'http://localhost:3000';
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl), // <--- Critical for Social Sharing
-  title: "LiquorShop GH | Premium Drinks",
-  description: "Ghana's premier online destination for premium wines, spirits, and beers.",
+  title: "The Perfume Store Ghana | Luxury Fragrances",
+  description: "Ghana's premier online destination for authentic luxury fragrances. Curating excellence since 2024.",
 };
 
 export default function RootLayout({
@@ -35,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakarta.variable}`} suppressHydrationWarning>
-      <body className="antialiased bg-secondary-50 min-h-screen flex flex-col" suppressHydrationWarning>
+    <html lang="en" className={`${cormorant.variable} ${jost.variable}`} suppressHydrationWarning>
+      <body className="antialiased bg-brand-cream min-h-screen flex flex-col font-body" suppressHydrationWarning>
         {children}
       </body>
       {/* Google Analytics 4 */}
