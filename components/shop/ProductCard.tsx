@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import SmartImage from '@/components/ui/SmartImage';
-import { ShoppingCart, Heart, Sparkles } from 'lucide-react';
+import { ShoppingCart, Heart, Sparkles, Minus, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { useCartStore } from '@/lib/store';
@@ -29,7 +29,7 @@ export interface ProductCardProps {
   isFeatured?: boolean;
   brand?: string;
   concentration?: string;
-  scentFamily?: string;
+  scent_family?: string;
   // NEW: Discount Props
   discountPercent?: number;
   discountStart?: string | null;
@@ -46,17 +46,19 @@ const ProductCard: React.FC<ProductCardProps> = ({
   isFeatured = false,
   brand = 'Luxury Fragrance',
   concentration = 'Eau de Parfum',
-  scentFamily = 'Floral',
+  scent_family = 'Floral',
   discountPercent = 0,
   discountStart,
   discountEnd
 }) => {
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id || '');
   const [isHovered, setIsHovered] = useState(false);
+  const [localQuantity, setLocalQuantity] = useState(1);
 
   // 1. Get Cart
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
   const toggleCart = useCartStore((state) => state.toggleCart);
 
   const selectedVariant = variants.find(v => v.id === selectedVariantId) || variants[0];
@@ -91,23 +93,34 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const isOutOfStock = masterStock <= 0;
   const isCartLimitReached = maxAddable < 1;
 
+  // 6. Find existing item to sync quantity
+  const existingItem = cartItems.find(item => item.variantId === selectedVariantId);
+  const displayQuantity = existingItem ? existingItem.quantity : localQuantity;
+
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (isOutOfStock || isCartLimitReached) return;
 
-    addItem({
-      variantId: selectedVariantId,
-      productId: id,
-      title: title,
-      variantName: selectedVariant.name,
-      price: finalPrice,
-      quantity: 1,
-      image: image,
-      stockDeduction: currentVariantDeduction,
-      masterStockTotal: masterStock
-    });
+    if (existingItem) {
+      // If already in cart, just increment by 1 (maintains "clicking cart icon to increase" approach)
+      updateQuantity(selectedVariantId, existingItem.quantity + 1);
+    } else {
+      // If not in cart, add the selected local quantity
+      addItem({
+        variantId: selectedVariantId,
+        productId: id,
+        title: title,
+        variantName: selectedVariant.name,
+        price: finalPrice,
+        quantity: localQuantity,
+        image: image,
+        stockDeduction: currentVariantDeduction,
+        masterStockTotal: masterStock
+      });
+      setLocalQuantity(1); // Reset local state after adding
+    }
 
     toggleCart();
   };
@@ -137,8 +150,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </button>
           <button
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all shadow-xl ${isOutOfStock || isCartLimitReached
-                ? 'bg-gray-400 text-white cursor-not-allowed'
-                : 'bg-brand-gold text-brand-deep hover:scale-110 active:scale-95'
+              ? 'bg-gray-400 text-white cursor-not-allowed'
+              : 'bg-brand-gold text-brand-deep hover:scale-110 active:scale-95'
               }`}
             onClick={handleAddToCart}
             disabled={isOutOfStock || isCartLimitReached}
@@ -171,7 +184,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
           </span>
           <span className="text-[9px] md:text-[10px] font-medium uppercase text-brand-muted shrink-0 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-light/30" />
-            {scentFamily}
+            {scent_family}
           </span>
         </div>
 
@@ -194,14 +207,56 @@ const ProductCard: React.FC<ProductCardProps> = ({
               key={v.id}
               onClick={() => setSelectedVariantId(v.id)}
               className={`px-2 py-1 text-[9px] md:text-[10px] font-bold rounded-full border transition-all ${selectedVariantId === v.id
-                  ? 'bg-brand-deep border-brand-deep text-white shadow-md shadow-brand-deep/20'
-                  : 'bg-white border-brand-border text-brand-muted hover:border-brand-gold hover:text-brand-gold'
+                ? 'bg-brand-deep border-brand-deep text-white shadow-md shadow-brand-deep/20'
+                : 'bg-white border-brand-border text-brand-muted hover:border-brand-gold hover:text-brand-gold'
                 }`}
             >
               {v.name}
             </button>
           ))}
         </div>
+
+        {/* Quantity Selector */}
+        {!isOutOfStock && !isCartLimitReached && (
+          <div className="flex items-center gap-3 pt-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-brand-muted shrink-0">Quantity</span>
+            <div className="flex items-center border border-brand-border rounded-lg overflow-hidden bg-brand-cream/5 h-8 w-28">
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (existingItem) {
+                    updateQuantity(selectedVariantId, Math.max(1, existingItem.quantity - 1));
+                  } else {
+                    setLocalQuantity(q => Math.max(1, q - 1));
+                  }
+                }}
+                disabled={displayQuantity <= 1}
+                className="flex-1 h-full flex items-center justify-center hover:bg-white transition-colors border-r border-brand-border disabled:opacity-30"
+                aria-label="Decrease quantity"
+              >
+                <Minus size={12} className="text-brand-deep" />
+              </button>
+              <span className="flex-1 text-center text-xs font-bold text-brand-deep">{displayQuantity}</span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (existingItem) {
+                    updateQuantity(selectedVariantId, Math.min(maxAddable + existingItem.quantity, existingItem.quantity + 1));
+                  } else {
+                    setLocalQuantity(q => Math.min(maxAddable, q + 1));
+                  }
+                }}
+                disabled={displayQuantity >= (existingItem ? maxAddable + existingItem.quantity : maxAddable) || isCartLimitReached}
+                className="flex-1 h-full flex items-center justify-center hover:bg-white transition-colors border-l border-brand-border disabled:opacity-30"
+                aria-label="Increase quantity"
+              >
+                <Plus size={12} className="text-brand-deep" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Price Section */}
         <div className="pt-2 flex items-center justify-between gap-2 border-t border-brand-border/50">

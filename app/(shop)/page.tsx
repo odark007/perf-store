@@ -241,7 +241,7 @@ export default async function HomePage() {
                     isFeatured={p.is_featured}
                     brand={p.brand}
                     concentration={p.concentration}
-                    scentFamily={p.scentFamily}
+                    scent_family={p.scent_family}
                     discountPercent={p.discount_percent}
                     discountStart={p.discount_start_at}
                     discountEnd={p.discount_end_at}

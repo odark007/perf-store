@@ -16,7 +16,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   const categorySlug = params.category as string;
   const brand = params.brand as string;
   const concentration = params.concentration as string;
-  const scentFamily = params.scent_family as string;
+  const scent_family = params.scent_family as string;
   const featured = params.featured === 'true';
   const minPrice = Number(params.min) || 0;
   const maxPrice = Number(params.max) || 20000;
@@ -43,7 +43,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   // 3. Fetch Metadata (Categories, Brands, Concentration, Scent Family)
   const [categoriesRes, productsMetaRes] = await Promise.all([
     supabase.from('categories').select('id, name, slug').order('name'),
-    supabase.from('products').select('brand, concentration, scentFamily')
+    supabase.from('products').select('brand, concentration, scent_family')
   ]);
 
   const categories = categoriesRes.data || [];
@@ -51,7 +51,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   const uniqueBrands = Array.from(new Set(allProductsMeta.map(p => p.brand).filter(Boolean))).sort();
   const uniqueConcentrations = Array.from(new Set(allProductsMeta.map(p => p.concentration).filter(Boolean))).sort();
-  const uniqueScentFamilies = Array.from(new Set(allProductsMeta.map(p => p.scentFamily).filter(Boolean))).sort();
+  const uniqueScentFamilies = Array.from(new Set(allProductsMeta.map(p => p.scent_family).filter(Boolean))).sort();
 
   // 4. Build Main Product Query
   let query = supabase
@@ -68,7 +68,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
   if (targetCategoryId) query = query.eq('category_id', targetCategoryId);
   if (brand) query = query.eq('brand', brand);
   if (concentration) query = query.eq('concentration', concentration);
-  if (scentFamily) query = query.eq('scentFamily', scentFamily);
+  if (scent_family) query = query.eq('scent_family', scent_family);
   if (featured) query = query.eq('is_featured', true);
   if (queryTerm) query = query.ilike('title', `%${queryTerm}%`);
 

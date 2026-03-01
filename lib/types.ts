@@ -45,8 +45,8 @@ export interface Product {
 
   // NEW perfume-specific fields:
   concentration?: FragranceConcentration;
-  scentFamily?: ScentFamily;
-  scentNotes?: ScentNotes;
+  scent_family?: ScentFamily;
+  scent_notes?: ScentNotes;
   longevity?: '2-4hrs' | '4-6hrs' | '6-8hrs' | '8+hrs';
   sillage?: 'Intimate' | 'Moderate' | 'Strong' | 'Massive';
   occasion?: string[];

@@ -73,15 +73,15 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
 
       // Perfume Fields
       setConcentration(initialData.concentration || 'EDP');
-      setScentFamily(initialData.scentFamily || 'Floral');
+      setScentFamily(initialData.scent_family || 'Floral');
       setGender(initialData.gender || 'unisex');
       setLongevity(initialData.longevity || '6-8hrs');
       setSillage(initialData.sillage || 'Moderate');
 
-      if (initialData.scentNotes) {
-        setTopNotes(initialData.scentNotes.top?.join(', ') || '');
-        setHeartNotes(initialData.scentNotes.heart?.join(', ') || '');
-        setBaseNotes(initialData.scentNotes.base?.join(', ') || '');
+      if (initialData.scent_notes) {
+        setTopNotes(initialData.scent_notes.top?.join(', ') || '');
+        setHeartNotes(initialData.scent_notes.heart?.join(', ') || '');
+        setBaseNotes(initialData.scent_notes.base?.join(', ') || '');
       }
 
       if (initialData.discount_start_at) setStartDate(initialData.discount_start_at.slice(0, 16));
@@ -127,11 +127,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
 
       // Fragrance Fields
       concentration,
-      scentFamily,
+      scent_family: scentFamily,
       gender,
       longevity,
       sillage,
-      scentNotes: {
+      scent_notes: {
         top: topNotes.split(',').map(s => s.trim()).filter(Boolean),
         heart: heartNotes.split(',').map(s => s.trim()).filter(Boolean),
         base: baseNotes.split(',').map(s => s.trim()).filter(Boolean),

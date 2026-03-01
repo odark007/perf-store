@@ -59,7 +59,7 @@ const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone }) => 
   return (
     <div className="bg-secondary-50 p-6 rounded-xl border border-secondary-200 sticky top-24">
       <h3 className="font-display font-bold text-lg text-secondary-900 mb-4">Order Summary</h3>
-      
+
       {/* Items List */}
       <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto pr-2 scrollbar-custom">
         {items.map((item) => (
@@ -68,7 +68,7 @@ const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone }) => 
               <div className="w-12 h-12 bg-white rounded-md border border-secondary-200 overflow-hidden">
                 <Image src={item.image} alt={item.title} fill className="object-cover" />
               </div>
-              <span className="absolute -top-2 -right-2 w-5 h-5 bg-secondary-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-secondary-50 shadow-sm z-10">
+              <span className="absolute -top-2 -right-2 w-6 h-6 bg-brand-deep text-white text-[11px] font-bold flex items-center justify-center rounded-full border-2 border-brand-cream shadow-md z-10">
                 {item.quantity}
               </span>
             </div>
@@ -87,14 +87,14 @@ const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone }) => 
       <div className="space-y-3 border-t border-secondary-200 pt-4 text-sm text-secondary-600">
         <div className="flex justify-between">
           <span>Subtotal</span>
-          <span className="font-medium text-secondary-900">{formatCurrency(subtotal)}</span> 
+          <span className="font-medium text-secondary-900">{formatCurrency(subtotal)}</span>
         </div>
 
         {/* Dynamic Taxes */}
         {taxLines.map(tax => (
           <div key={tax.name} className="flex justify-between">
             <span>{tax.name}</span>
-            <span>{formatCurrency(tax.amount)}</span> 
+            <span>{formatCurrency(tax.amount)}</span>
           </div>
         ))}
 
@@ -111,7 +111,7 @@ const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone }) => 
         {/* Grand Total */}
         <div className="flex justify-between text-base font-bold text-secondary-900 border-t border-secondary-200 pt-3">
           <span>Total to Pay</span>
-          <span>{formatCurrency(grandTotal)}</span> 
+          <span>{formatCurrency(grandTotal)}</span>
         </div>
       </div>
     </div>

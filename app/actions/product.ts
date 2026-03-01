@@ -28,8 +28,8 @@ interface ProductInput {
 
   // New Fragrance Attributes
   concentration?: string;
-  scentFamily?: string;
-  scentNotes?: {
+  scent_family?: string;
+  scent_notes?: {
     top: string[];
     heart: string[];
     base: string[];
@@ -96,8 +96,8 @@ export async function createProduct(input: ProductInput) {
         discount_end_at: promo.end,
         // Map new fields
         concentration: input.concentration,
-        scentFamily: input.scentFamily,
-        scentNotes: input.scentNotes,
+        scent_family: input.scent_family,
+        scent_notes: input.scent_notes,
         longevity: input.longevity,
         sillage: input.sillage,
         gender: input.gender,
@@ -175,8 +175,8 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
       discount_end_at: promo.end,
       // Map new fields
       concentration: input.concentration,
-      scentFamily: input.scentFamily,
-      scentNotes: input.scentNotes,
+      scent_family: input.scent_family,
+      scent_notes: input.scent_notes,
       longevity: input.longevity,
       sillage: input.sillage,
       gender: input.gender,

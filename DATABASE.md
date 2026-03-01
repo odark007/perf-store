@@ -8,7 +8,7 @@ This document describes the complete database structure for the Perfume Store Ac
 
 - **Platform:** Supabase (PostgreSQL)
 - **Project Name:** perfume-store-accra
-- **URL:** https://eominikzaajxzvmmpmtt.supabase.co
+- **URL:** <https://eominikzaajxzvmmpmtt.supabase.co>
 - **Schema:** `public` (all custom tables live here)
 
 ---
@@ -24,6 +24,7 @@ uuid-ossp  -- Used for uuid_generate_v4() as default primary keys
 ## Custom Functions
 
 ### `is_super_admin()`
+
 Returns `true` if the currently authenticated user has `role = 'super_admin'` in the profiles table. Used extensively in RLS policies.
 
 ```sql
@@ -42,6 +43,7 @@ $$;
 ```
 
 ### `handle_new_user()`
+
 Automatically creates a profile row in `public.profiles` whenever a new user signs up via Supabase Auth. Triggered by `on_auth_user_created`.
 
 ```sql
@@ -87,6 +89,7 @@ Roles are stored as plain text in `public.profiles.role`. There are 3 roles:
 ## Tables
 
 ### 1. `categories`
+
 Stores product categories. Supports self-referencing parent/child hierarchy.
 
 ```sql
@@ -101,6 +104,7 @@ CREATE TABLE public.categories (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public can view categories | SELECT | `true` |
@@ -109,6 +113,7 @@ CREATE TABLE public.categories (
 ---
 
 ### 2. `profiles`
+
 Stores user profile data. Linked 1:1 with `auth.users`. Auto-created via trigger on signup.
 
 ```sql
@@ -121,11 +126,13 @@ CREATE TABLE public.profiles (
 ```
 
 **Notes:**
+
 - `id` matches `auth.users.id` exactly
 - Default role on signup is `customer` (set by `handle_new_user()` trigger)
 - To promote a user to super_admin: `UPDATE public.profiles SET role = 'super_admin' WHERE email = 'admin@example.com';`
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Users can read own profile | SELECT | `auth.uid() = id` |
@@ -134,6 +141,7 @@ CREATE TABLE public.profiles (
 ---
 
 ### 3. `products`
+
 Core product catalog.
 
 ```sql
@@ -151,11 +159,19 @@ CREATE TABLE public.products (
   is_featured       boolean DEFAULT false,
   discount_percent  integer DEFAULT 0,
   discount_start_at timestamptz,
-  discount_end_at   timestamptz
+  discount_end_at   timestamptz,
+  concentration     text,
+  scent_family      text,
+  scent_notes       jsonb,
+  longevity         text,
+  sillage           text,
+  gender            text,
+  occasion          text[]
 );
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public products are viewable | SELECT | `true` |
@@ -167,6 +183,7 @@ CREATE TABLE public.products (
 ---
 
 ### 4. `product_variants`
+
 Each product can have multiple variants (e.g. size, volume). Price is set per variant.
 
 ```sql
@@ -184,6 +201,7 @@ CREATE TABLE public.product_variants (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public variants are viewable | SELECT | `true` |
@@ -195,6 +213,7 @@ CREATE TABLE public.product_variants (
 ---
 
 ### 5. `delivery_zones`
+
 Defines delivery areas and their base prices.
 
 ```sql
@@ -209,6 +228,7 @@ CREATE TABLE public.delivery_zones (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public read zones | SELECT | `true` |
@@ -217,6 +237,7 @@ CREATE TABLE public.delivery_zones (
 ---
 
 ### 6. `taxes`
+
 Tax rates applied to orders.
 
 ```sql
@@ -230,6 +251,7 @@ CREATE TABLE public.taxes (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public read taxes | SELECT | `true` |
@@ -238,6 +260,7 @@ CREATE TABLE public.taxes (
 ---
 
 ### 7. `orders`
+
 Customer orders. Uses a sequential `order_number` for human-readable order IDs.
 
 ```sql
@@ -267,6 +290,7 @@ CREATE TABLE public.orders (
 **Delivery status values:** `processing`, `shipped`, `delivered`, `cancelled`
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Enable insert for all users | INSERT | `true` |
@@ -275,6 +299,7 @@ CREATE TABLE public.orders (
 ---
 
 ### 8. `order_items`
+
 Line items belonging to an order. Stores snapshot of product/price at time of purchase.
 
 ```sql
@@ -290,6 +315,7 @@ CREATE TABLE public.order_items (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Enable insert for all users | INSERT | `true` |
@@ -298,6 +324,7 @@ CREATE TABLE public.order_items (
 ---
 
 ### 9. `inventory_master`
+
 Tracks stock levels for products.
 
 ```sql
@@ -310,6 +337,7 @@ CREATE TABLE public.inventory_master (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public full access during dev | ALL | `true` |
@@ -321,6 +349,7 @@ CREATE TABLE public.inventory_master (
 ---
 
 ### 10. `store_settings`
+
 Single-row table for global store configuration. Always has `id = 1`.
 
 ```sql
@@ -345,11 +374,13 @@ CREATE TABLE public.store_settings (
 ```
 
 **Notes:**
+
 - Always query with `SELECT * FROM store_settings WHERE id = 1`
 - Always update with `UPDATE store_settings SET ... WHERE id = 1`
 - Never insert a second row — the CHECK constraint prevents it
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public read settings | SELECT | `true` |
@@ -358,6 +389,7 @@ CREATE TABLE public.store_settings (
 ---
 
 ### 11. `posts`
+
 Blog posts. Supports draft/published state and SEO metadata.
 
 ```sql
@@ -378,6 +410,7 @@ CREATE TABLE public.posts (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public can read published posts | SELECT | `is_published = true` |
@@ -386,6 +419,7 @@ CREATE TABLE public.posts (
 ---
 
 ### 12. `product_reviews`
+
 Customer reviews for products. Rating must be between 1 and 5.
 
 ```sql
@@ -400,6 +434,7 @@ CREATE TABLE public.product_reviews (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Users can create reviews | INSERT | `auth.uid() = user_id` |
@@ -410,6 +445,7 @@ CREATE TABLE public.product_reviews (
 ---
 
 ### 13. `marketing_campaigns`
+
 Promotional banners and campaigns displayed on the storefront.
 
 ```sql
@@ -429,6 +465,7 @@ CREATE TABLE public.marketing_campaigns (
 ```
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public view active campaigns | SELECT | `true` |
@@ -437,6 +474,7 @@ CREATE TABLE public.marketing_campaigns (
 ---
 
 ### 14. `notification_templates`
+
 SMS and email templates for automated notifications. Keyed by `trigger_id`.
 
 ```sql
@@ -451,10 +489,12 @@ CREATE TABLE public.notification_templates (
 ```
 
 **Notes:**
+
 - `trigger_id` is a human-readable key like `order_placed`, `order_shipped`, etc.
 - Templates support placeholder variables like `{{order_number}}`, `{{customer_name}}`
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Public read templates | SELECT | `true` |
@@ -463,6 +503,7 @@ CREATE TABLE public.notification_templates (
 ---
 
 ### 15. `sms_logs`
+
 Audit log of all SMS messages sent by the system.
 
 ```sql
@@ -479,6 +520,7 @@ CREATE TABLE public.sms_logs (
 **Status values:** `pending`, `sent`, `failed`
 
 **RLS Policies:**
+
 | Policy | Command | Rule |
 |---|---|---|
 | Admins can view sms logs | SELECT | `is_super_admin()` |
@@ -491,6 +533,7 @@ CREATE TABLE public.sms_logs (
 All buckets are **PUBLIC** with a **50MB** file size limit and allow **`image/*`** MIME types only.
 
 ### `product-images`
+
 Stores product and variant images.
 
 | Policy | Command | Rule |
@@ -501,6 +544,7 @@ Stores product and variant images.
 | Admin Delete | DELETE | `auth.role() = 'authenticated'` |
 
 ### `blog-images`
+
 Stores cover images for blog posts.
 
 | Policy | Command | Rule |
@@ -510,6 +554,7 @@ Stores cover images for blog posts.
 | Admin Delete Blog | DELETE | `auth.role() = 'authenticated'` |
 
 ### `marketing-assets`
+
 Stores images for marketing campaigns and banners.
 
 | Policy | Command | Rule |

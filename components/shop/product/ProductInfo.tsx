@@ -21,6 +21,7 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
 
   const cartItems = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
+  const updateQuantity = useCartStore((state) => state.updateQuantity);
 
   const selectedVariant = variants.find(v => v.id === selectedId) || variants[0];
   const masterStock = Number(selectedVariant?.master_stock) || 0;
@@ -43,6 +44,10 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
 
   const isOutOfStock = masterStock <= 0;
   const isCartLimitReached = maxAddable < 1;
+
+  // Sync quantity with cart if item exists
+  const existingItem = cartItems.find(item => item.variantId === selectedId);
+  const displayQuantity = existingItem ? existingItem.quantity : quantity;
 
   useEffect(() => {
     setQuantity(1);
@@ -83,18 +88,24 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
       }]
     });
 
-    addItem({
-      variantId: selectedVariant.id,
-      productId: product.id,
-      title: product.title,
-      variantName: selectedVariant.name,
-      price: finalPrice,
-      quantity: quantity,
-      image: product.base_image_url,
-      maxStock: 0,
-      stockDeduction: currentVariantDeduction,
-      masterStockTotal: masterStock
-    });
+    if (existingItem) {
+      // If already in cart, increment by the selected amount (or just 1 if we want consistency with card)
+      // The user wants "awareness", so most natural is that the button adds the current selector value
+      updateQuantity(selectedId, existingItem.quantity + quantity);
+    } else {
+      addItem({
+        variantId: selectedVariant.id,
+        productId: product.id,
+        title: product.title,
+        variantName: selectedVariant.name,
+        price: finalPrice,
+        quantity: quantity,
+        image: product.base_image_url,
+        maxStock: 0,
+        stockDeduction: currentVariantDeduction,
+        masterStockTotal: masterStock
+      });
+    }
 
     setQuantity(1);
   };
@@ -152,15 +163,15 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
       </div>
 
       {/* 2. Scent Identity (Olfactory Pyramid) */}
-      {(product.scentNotes || product.scentFamily) && (
+      {(product.scent_notes || product.scent_family) && (
         <div className="p-8 bg-white border border-brand-border rounded-3xl shadow-sm space-y-8">
           <div className="flex justify-between items-center border-b border-brand-border pb-4">
             <h3 className="font-display text-xl font-bold flex items-center gap-2 italic">
               Olfactive Journey
             </h3>
-            {product.scentFamily && (
+            {product.scent_family && (
               <span className="text-[10px] bg-brand-cream/50 px-3 py-1 rounded-full font-bold uppercase tracking-widest border border-brand-border text-brand-muted">
-                {product.scentFamily} Famille
+                {product.scent_family} Famille
               </span>
             )}
           </div>
@@ -169,19 +180,19 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
             <div className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold block">Top Notes</span>
               <p className="text-sm text-brand-deep font-medium leading-relaxed">
-                {product.scentNotes?.top.join(', ') || 'Sparkling Citrus, Fresh Accords'}
+                {product.scent_notes?.top.join(', ') || 'Sparkling Citrus, Fresh Accords'}
               </p>
             </div>
             <div className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold block">Heart Notes</span>
               <p className="text-sm text-brand-deep font-medium leading-relaxed">
-                {product.scentNotes?.heart.join(', ') || 'Floral Bloom, Spicy Echoes'}
+                {product.scent_notes?.heart.join(', ') || 'Floral Bloom, Spicy Echoes'}
               </p>
             </div>
             <div className="space-y-2">
               <span className="text-[10px] font-bold uppercase tracking-widest text-brand-gold block">Base Notes</span>
               <p className="text-sm text-brand-deep font-medium leading-relaxed">
-                {product.scentNotes?.base.join(', ') || 'Velvet Musk, Sandalwood'}
+                {product.scent_notes?.base.join(', ') || 'Velvet Musk, Sandalwood'}
               </p>
             </div>
           </div>
@@ -244,20 +255,32 @@ const ProductInfo: React.FC<Props> = ({ product, variants }) => {
 
         {/* Quantity & Action */}
         <div className="flex flex-col sm:flex-row gap-4 pt-4">
-          <div className="flex items-center border border-brand-border rounded-2xl overflow-hidden bg-white shadow-sm h-14">
+          <div className="flex items-center border border-brand-border rounded-2xl overflow-hidden bg-white shadow-sm h-14 w-full max-w-[160px]">
             <button
-              onClick={() => setQuantity(q => Math.max(1, q - 1))}
-              disabled={quantity <= 1 || isOutOfStock || isCartLimitReached}
-              className="px-5 transition-colors hover:bg-brand-cream disabled:opacity-30"
+              onClick={() => {
+                if (existingItem) {
+                  updateQuantity(selectedId, Math.max(1, existingItem.quantity - 1));
+                } else {
+                  setQuantity(q => Math.max(1, q - 1));
+                }
+              }}
+              disabled={displayQuantity <= 1 || isOutOfStock || isCartLimitReached}
+              className="flex-1 h-full flex items-center justify-center transition-colors hover:bg-brand-cream disabled:opacity-30"
               aria-label="Decrease quantity"
             >
               <Minus size={18} className="text-brand-deep" />
             </button>
-            <span className="w-12 text-center font-bold text-lg text-brand-deep">{quantity}</span>
+            <span className="w-12 text-center font-bold text-lg text-brand-deep flex items-center justify-center h-full">{displayQuantity}</span>
             <button
-              onClick={() => setQuantity(q => Math.min(maxAddable, q + 1))}
-              disabled={quantity >= maxAddable || isOutOfStock || isCartLimitReached}
-              className="px-5 transition-colors hover:bg-brand-cream disabled:opacity-30"
+              onClick={() => {
+                if (existingItem) {
+                  updateQuantity(selectedId, Math.min(maxAddable + existingItem.quantity, existingItem.quantity + 1));
+                } else {
+                  setQuantity(q => Math.min(maxAddable, q + 1));
+                }
+              }}
+              disabled={displayQuantity >= (existingItem ? maxAddable + existingItem.quantity : maxAddable) || isOutOfStock || isCartLimitReached}
+              className="flex-1 h-full flex items-center justify-center transition-colors hover:bg-brand-cream disabled:opacity-30"
               aria-label="Increase quantity"
             >
               <Plus size={18} className="text-brand-deep" />

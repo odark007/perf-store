@@ -145,7 +145,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                     isFeatured={p.is_featured}
                     brand={p.brand}
                     concentration={p.concentration}
-                    scentFamily={p.scentFamily}
+                    scent_family={p.scent_family}
                   />
                 );
               })}
