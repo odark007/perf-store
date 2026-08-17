@@ -16,11 +16,17 @@ export async function POST(req: Request) {
         // Paystack expects amount in Kobos/Pesewas (multiply by 100)
         const amountInKobo = Math.round(amount * 100);
 
+        // Normalize base URL (strip trailing slash) to avoid double-slash in callback_url.
+        // Prefer a dedicated PAYSTACK_CALLBACK_BASE_URL (useful for local dev, e.g. http://localhost:3000),
+        // then fall back to the public site URL.
+        const rawBaseUrl = process.env.PAYSTACK_CALLBACK_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+        const baseUrl = rawBaseUrl.replace(/\/+$/, '');
+
         const params = {
             email,
             amount: amountInKobo,
             currency: 'GHS',
-            callback_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/checkout/verify?orderId=${orderId}`,
+            callback_url: `${baseUrl}/checkout/verify?orderId=${orderId}`,
             metadata: {
                 order_id: orderId,
                 phone_number: phone,
@@ -55,7 +61,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: data.message }, { status: 400 });
         }
 
-        return NextResponse.json({ url: data.data.authorization_url, reference: data.data.reference });
+        return NextResponse.json({ url: data.data.authorization_url, reference: data.data.reference, callback_url: `${baseUrl}/checkout/verify?orderId=${orderId}` });
 
     } catch (error: any) {
         console.error('Paystack Init Error:', error);

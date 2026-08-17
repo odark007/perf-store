@@ -8,14 +8,14 @@ export async function getDashboardStats() {
   try {
     // 1. Get Orders Data
     const { data: orders, error: orderError } = await supabase
-      .from('orders')
+      .from('orders_perfume_store')
       .select('total_amount, payment_status, delivery_status');
 
     if (orderError) throw orderError;
 
     // 2. Get Inventory Data
     const { data: inventory, error: invError } = await supabase
-      .from('inventory_master')
+      .from('inventory_master_perfume_store')
       .select('current_stock_level, low_stock_threshold');
 
     if (invError) throw invError;

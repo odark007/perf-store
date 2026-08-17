@@ -26,14 +26,14 @@ export async function placeOrder(payload: OrderPayload) {
     const variantIds = payload.items.map(i => i.variantId);
 
     const { data: dbVariants, error: varError } = await supabase
-      .from('product_variants')
+      .from('product_variants_perfume_store')
       .select(`
         id, 
         stock_deduction, 
         master_stock_id, 
         price, 
-        inventory:inventory_master(id, current_stock_level),
-        product:products(
+        inventory:inventory_master_perfume_store(id, current_stock_level),
+        product:products_perfume_store(
           is_featured,
           discount_percent,
           discount_start_at,
@@ -94,7 +94,7 @@ export async function placeOrder(payload: OrderPayload) {
 
       // Deduct
       await supabase
-        .from('inventory_master')
+        .from('inventory_master_perfume_store')
         // @ts-ignore
         .update({ current_stock_level: inventory.current_stock_level - totalRequired })
         .eq('id', masterId);
@@ -102,12 +102,12 @@ export async function placeOrder(payload: OrderPayload) {
 
     // 5. CALCULATE FINAL TOTAL (Delivery + Tax)
     const zonePromise = payload.deliveryZoneId
-      ? supabase.from('delivery_zones').select('*').eq('id', payload.deliveryZoneId).single()
+      ? supabase.from('delivery_zones_perfume_store').select('*').eq('id', payload.deliveryZoneId).single()
       : Promise.resolve({ data: null });
 
     const [settingsRes, taxesRes, zoneRes] = await Promise.all([
-      supabase.from('store_settings').select('*').single(),
-      supabase.from('taxes').select('*').eq('is_active', true),
+      supabase.from('store_settings_perfume_store').select('*').single(),
+      supabase.from('taxes_perfume_store').select('*').eq('is_active', true),
       zonePromise
     ]);
 
@@ -132,7 +132,7 @@ export async function placeOrder(payload: OrderPayload) {
 
     // 6. CREATE ORDER
     const { data: order, error: orderError } = await supabase
-      .from('orders')
+      .from('orders_perfume_store')
       .insert({
         user_id: user?.id || null,
         user_phone: formattedPhone,
@@ -158,16 +158,16 @@ export async function placeOrder(payload: OrderPayload) {
       ...item
     }));
 
-    await supabase.from('order_items').insert(itemsToInsert);
+    await supabase.from('order_items_perfume_store').insert(itemsToInsert);
 
     // 8. NOTIFICATIONS
-    // Logic: 
-    // 1. If Manual/PayLater -> Send Immediately.
-    // 2. If Paystack AND Localhost (Dev) -> Send Immediately (Mocking the webhook).
-    // 3. If Paystack AND Production -> Skip (Wait for real Webhook).
+    // Logic:
+    // 1. If Manual/PayLater -> Send Immediately (no online payment involved).
+    // 2. If Paystack -> NEVER send at checkout. Wait for payment confirmation
+    //    (webhook in production, verify route in dev). This prevents the customer
+    //    from receiving order SMS before they have actually paid.
 
-    const isDev = process.env.NODE_ENV === 'development';
-    const shouldSendNow = payload.paymentMethod !== 'paystack' || isDev;
+    const shouldSendNow = payload.paymentMethod !== 'paystack';
 
     if (shouldSendNow) {
       const noteParts = payload.notes ? payload.notes.split(' - ') : [];
@@ -186,7 +186,7 @@ export async function placeOrder(payload: OrderPayload) {
         items: secureOrderItems
       };
 
-      console.log(`[Checkout] Triggering Notifications (Immediate Mode: ${isDev ? 'Dev Override' : 'Manual Payment'})`);
+      console.log(`[Checkout] Triggering Notifications (${payload.paymentMethod})`);
 
       try {
         await sendNotification('new_order_admin', notificationData);
@@ -195,7 +195,7 @@ export async function placeOrder(payload: OrderPayload) {
         console.error("[Checkout] Notification Trigger Failed:", notifyErr);
       }
     } else {
-      console.log(`[Checkout] Skipping notifications for Paystack order #${order.order_number} (Waiting for Webhook)`);
+      console.log(`[Checkout] Skipping notifications for Paystack order #${order.order_number} (Waiting for Payment Confirmation)`);
     }
 
     return { success: true, orderId: order.id, finalTotal: finalGrandTotal };

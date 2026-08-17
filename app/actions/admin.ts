@@ -10,7 +10,7 @@ async function checkSuperAdmin() {
   if (!user) throw new Error('Unauthorized');
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles_perfume_store')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -30,7 +30,7 @@ export async function createCategory(formData: FormData) {
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
     const { error } = await supabase
-      .from('categories')
+      .from('categories_perfume_store')
       .insert({ name, slug });
 
     if (error) throw error;
@@ -47,7 +47,7 @@ export async function deleteCategory(categoryId: string) {
 
     // 1. Check for existing products
     const { count, error: countError } = await supabase
-      .from('products')
+      .from('products_perfume_store')
       .select('*', { count: 'exact', head: true })
       .eq('category_id', categoryId);
 
@@ -59,7 +59,7 @@ export async function deleteCategory(categoryId: string) {
 
     // 2. Delete
     const { error } = await supabase
-      .from('categories')
+      .from('categories_perfume_store')
       .delete()
       .eq('id', categoryId);
 
@@ -80,7 +80,7 @@ export async function updateCategory(id: string, formData: FormData) {
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
     const { error } = await supabase
-      .from('categories')
+      .from('categories_perfume_store')
       .update({ name, slug })
       .eq('id', id);
 

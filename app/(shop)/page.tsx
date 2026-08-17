@@ -26,13 +26,13 @@ export default async function HomePage() {
   const [featuredRes, blogRes, samplerRes, campaignRes] = await Promise.all([
     // A. Featured Products
     supabase
-      .from('products')
+      .from('products_perfume_store')
       .select(`
         *,
-        categories(name),
-        variants:product_variants(
+        categories_perfume_store(name),
+        variants:product_variants_perfume_store(
           *,
-          inventory:inventory_master(current_stock_level)
+          inventory:inventory_master_perfume_store(current_stock_level)
         )
       `)
       .eq('is_featured', true)
@@ -41,7 +41,7 @@ export default async function HomePage() {
 
     // B. Latest Blog Posts
     supabase
-      .from('posts')
+      .from('posts_perfume_store')
       .select('*')
       .eq('is_published', true)
       .order('published_at', { ascending: false })
@@ -49,13 +49,13 @@ export default async function HomePage() {
 
     // C. The Scent Discovery Pool
     supabase
-      .from('products')
+      .from('products_perfume_store')
       .select(`
         *,
-        categories(id, name),
-        variants:product_variants(
+        categories_perfume_store(id, name),
+        variants:product_variants_perfume_store(
           *,
-          inventory:inventory_master(current_stock_level)
+          inventory:inventory_master_perfume_store(current_stock_level)
         )
       `)
       .eq('is_active', true)
@@ -64,7 +64,7 @@ export default async function HomePage() {
 
     // D. Campaigns
     supabase
-      .from('marketing_campaigns')
+      .from('marketing_campaigns_perfume_store')
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false })

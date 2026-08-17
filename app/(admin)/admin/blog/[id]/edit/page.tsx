@@ -9,7 +9,7 @@ interface PageProps {
 export default async function EditPostPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: post } = await supabase.from('posts').select('*').eq('id', id).single();
+  const { data: post } = await supabase.from('posts_perfume_store').select('*').eq('id', id).single();
 
   if (!post) return <div>Post not found</div>;
 

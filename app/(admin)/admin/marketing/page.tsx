@@ -14,7 +14,7 @@ export default async function MarketingPage() {
   const supabase = await createClient();
 
   const { data: campaigns } = await supabase
-    .from('marketing_campaigns')
+    .from('marketing_campaigns_perfume_store')
     .select('*')
     .order('created_at', { ascending: false });
 

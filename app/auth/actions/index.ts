@@ -47,7 +47,7 @@ export async function loginAction(formData: FormData) {
 
   if (user) {
     const { data: profile } = await supabase
-      .from('profiles')
+      .from('profiles_perfume_store')
       .select('role')
       .eq('id', user.id)
       .single();
@@ -95,7 +95,7 @@ export async function createUserAction(formData: FormData) {
   if (!user) return { error: 'Unauthorized' };
 
   const { data: currentUserProfile } = await supabase
-    .from('profiles')
+    .from('profiles_perfume_store')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -127,7 +127,7 @@ export async function createUserAction(formData: FormData) {
 
   // 4. Update the profile role
   const { error: profileError } = await supabaseAdmin
-    .from('profiles')
+    .from('profiles_perfume_store')
     .update({ role })
     .eq('id', newUser.user.id);
 

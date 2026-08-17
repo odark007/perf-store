@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { CheckCircle, MessageCircle, Home } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import PurchaseTracker from '@/components/checkout/PurchaseTracker';
 
 // Next.js 15: Params are a Promise
@@ -15,12 +15,12 @@ export default async function SuccessPage({ params }: SuccessPageProps) {
   const resolvedParams = await params;
   const { id } = resolvedParams;
 
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Fetch minimal order details
   const { data: order, error } = await supabase
-    .from('orders')
-    .select('id, order_number, total_amount, payment_method, tax_amount, delivery_fee, items:order_items(*)')
+    .from('orders_perfume_store')
+    .select('id, order_number, total_amount, payment_method, tax_amount, delivery_fee, items:order_items_perfume_store(*)')
     .eq('id', id)
     .single();
 
@@ -61,7 +61,7 @@ export default async function SuccessPage({ params }: SuccessPageProps) {
           <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-8 text-left">
             <h3 className="font-bold text-yellow-900 mb-2">Next Step: Complete Payment</h3>
             <p className="text-sm text-yellow-800 mb-4">
-              Please send <strong>GH₵{order.total_amount.toFixed(2)}</strong> to:
+              Please send <strong>GH₵{Number(order.total_amount).toFixed(2)}</strong> to:
             </p>
             <div className="bg-white p-3 rounded border border-yellow-200 mb-4 font-mono text-center">
               MTN MoMo: 024 XXX XXXX <br />

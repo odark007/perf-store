@@ -30,7 +30,7 @@ export default async function BlogListingPage({ searchParams }: PageProps) {
 
   // 2. Build Query
   let query = supabase
-    .from('posts')
+    .from('posts_perfume_store')
     .select('*', { count: 'exact' })
     .eq('is_published', true);
 

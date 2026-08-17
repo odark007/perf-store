@@ -25,7 +25,7 @@ export default async function CategoriesPage({ searchParams }: PageProps) {
 
   // 2. Build Query
   let query = supabase
-    .from('categories')
+    .from('categories_perfume_store')
     .select('*', { count: 'exact' });
 
   if (searchTerm) {

@@ -33,7 +33,7 @@ export default function UpdatePasswordPage() {
     // 2. Check Role for Redirection
     if (user) {
       const { data: profile } = await supabase
-        .from('profiles')
+        .from('profiles_perfume_store')
         .select('role')
         .eq('id', user.id)
         .single();

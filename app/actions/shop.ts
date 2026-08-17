@@ -8,13 +8,13 @@ export async function getProductBySlug(slug: string) {
   const supabase = await createClient();
   
   const { data, error } = await supabase
-    .from('products')
+    .from('products_perfume_store')
     .select(`
       *,
-      categories (id, name, slug),
-      variants:product_variants (
+      categories_perfume_store (id, name, slug),
+      variants:product_variants_perfume_store (
         *,
-        inventory:inventory_master (current_stock_level)
+        inventory:inventory_master_perfume_store (current_stock_level)
       )
     `)
     .eq('slug', slug)
@@ -31,12 +31,12 @@ export async function getRelatedProducts(categoryId: string, currentProductId: s
 
   // Attempt 1: Same Category
   let { data: related } = await supabase
-    .from('products')
+    .from('products_perfume_store')
     .select(`
       *,
-      variants:product_variants (
+      variants:product_variants_perfume_store (
         *,
-        inventory:inventory_master (current_stock_level)
+        inventory:inventory_master_perfume_store (current_stock_level)
       )
     `)
     .eq('category_id', categoryId)
@@ -52,12 +52,12 @@ export async function getRelatedProducts(categoryId: string, currentProductId: s
     existingIds.push(currentProductId);
 
     const { data: random } = await supabase
-      .from('products')
+      .from('products_perfume_store')
       .select(`
         *,
-        variants:product_variants (
+        variants:product_variants_perfume_store (
           *,
-          inventory:inventory_master (current_stock_level)
+          inventory:inventory_master_perfume_store (current_stock_level)
         )
       `)
       .not('id', 'in', `(${existingIds.join(',')})`)
@@ -78,7 +78,7 @@ export async function getProductReviews(productId: string) {
   // We join with profiles to get the reviewer name (if you store names in profiles)
   // Or we just show "Verified Customer" if no name data exists publicly
   const { data } = await supabase
-    .from('product_reviews')
+    .from('product_reviews_perfume_store')
     .select('*')
     .eq('product_id', productId)
     .order('created_at', { ascending: false });
@@ -94,7 +94,7 @@ export async function submitReview(productId: string, rating: number, comment: s
   if (!user) return { error: 'You must be logged in to leave a review.' };
 
   const { error } = await supabase
-    .from('product_reviews')
+    .from('product_reviews_perfume_store')
     .insert({
       product_id: productId,
       user_id: user.id,

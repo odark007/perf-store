@@ -1,5 +1,5 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import OrdersTable from '@/components/admin/OrdersTable';
 import OrdersToolbar from '@/components/admin/OrdersToolbar';
 import Pagination from '@/components/ui/Pagination';
@@ -13,7 +13,7 @@ interface OrdersPageProps {
 
 export default async function OrdersPage({ searchParams }: OrdersPageProps) {
   const params = await searchParams;
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // 1. Parse Params
   const page = Number(params?.page) || 1;
@@ -27,7 +27,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   // 3. Build Query
   let query = supabase
-    .from('orders')
+    .from('orders_perfume_store')
     .select('*', { count: 'exact' });
 
   // Apply Search (Search by Phone Number)

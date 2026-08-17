@@ -8,7 +8,7 @@ This document describes the complete database structure for the Perfume Store Ac
 
 - **Platform:** Supabase (PostgreSQL)
 - **Project Name:** perfume-store-accra
-- **URL:** <https://eominikzaajxzvmmpmtt.supabase.co>
+- **URL:** <https://lllipyzpdoiennpspafh.supabase.co>
 - **Schema:** `public` (all custom tables live here)
 
 ---
@@ -23,37 +23,37 @@ uuid-ossp  -- Used for uuid_generate_v4() as default primary keys
 
 ## Custom Functions
 
-### `is_super_admin()`
+### `is_super_admin_perfume_store()`
 
-Returns `true` if the currently authenticated user has `role = 'super_admin'` in the profiles table. Used extensively in RLS policies.
+Returns `true` if the currently authenticated user has `role = 'super_admin'` in the profiles_perfume_store table. Used extensively in RLS policies.
 
 ```sql
-CREATE OR REPLACE FUNCTION public.is_super_admin()
+CREATE OR REPLACE FUNCTION public.is_super_admin_perfume_store()
 RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 begin
   return exists (
-    select 1 from public.profiles
+    select 1 from public.profiles_perfume_store
     where id = auth.uid() and role = 'super_admin'
   );
 end;
 $$;
 ```
 
-### `handle_new_user()`
+### `handle_new_user_perfume_store()`
 
-Automatically creates a profile row in `public.profiles` whenever a new user signs up via Supabase Auth. Triggered by `on_auth_user_created`.
+Automatically creates a profile row in `public.profiles_perfume_store` whenever a new user signs up via Supabase Auth. Triggered by `on_auth_user_created_perfume_store`.
 
 ```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
+CREATE OR REPLACE FUNCTION public.handle_new_user_perfume_store()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 begin
-  insert into public.profiles (id, email, role)
+  insert into public.profiles_perfume_store (id, email, role)
   values (new.id, new.email, 'customer');
   return new;
 end;
@@ -66,38 +66,38 @@ $$;
 
 ```sql
 -- Fires after every new user is inserted into auth.users
-CREATE TRIGGER on_auth_user_created
+CREATE TRIGGER on_auth_user_created_perfume_store
   AFTER INSERT ON auth.users
   FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
+  EXECUTE FUNCTION public.handle_new_user_perfume_store();
 ```
 
 ---
 
 ## User Roles
 
-Roles are stored as plain text in `public.profiles.role`. There are 3 roles:
+Roles are stored as plain text in `public.profiles_perfume_store.role`. There are 3 roles:
 
 | Role | Description |
 |---|---|
-| `customer` | Default role assigned on signup. Can shop, review, view orders. |
-| `store_manager` | Can manage products, inventory, orders. |
+| `customer` | Default role assigned on signup. Can shop, review, view orders_perfume_store. |
+| `store_manager` | Can manage products_perfume_store, inventory, orders_perfume_store. |
 | `super_admin` | Full access. Can manage users, settings, all admin features. |
 
 ---
 
 ## Tables
 
-### 1. `categories`
+### 1. `categories_perfume_store`
 
-Stores product categories. Supports self-referencing parent/child hierarchy.
+Stores product categories_perfume_store. Supports self-referencing parent/child hierarchy.
 
 ```sql
-CREATE TABLE public.categories (
+CREATE TABLE public.categories_perfume_store (
   id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   name        text NOT NULL,
   slug        text NOT NULL,
-  parent_id   uuid REFERENCES public.categories(id) ON DELETE SET NULL,
+  parent_id   uuid REFERENCES public.categories_perfume_store(id) ON DELETE SET NULL,
   image_url   text,
   created_at  timestamptz NOT NULL DEFAULT timezone('utc', now())
 );
@@ -107,17 +107,17 @@ CREATE TABLE public.categories (
 
 | Policy | Command | Rule |
 |---|---|---|
-| Public can view categories | SELECT | `true` |
-| Admins can manage categories | ALL | `is_super_admin()` |
+| Public can view categories_perfume_store | SELECT | `true` |
+| Admins can manage categories_perfume_store | ALL | `is_super_admin_perfume_store()` |
 
 ---
 
-### 2. `profiles`
+### 2. `profiles_perfume_store`
 
 Stores user profile data. Linked 1:1 with `auth.users`. Auto-created via trigger on signup.
 
 ```sql
-CREATE TABLE public.profiles (
+CREATE TABLE public.profiles_perfume_store (
   id          uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email       text,
   role        text NOT NULL DEFAULT 'store_manager',
@@ -128,24 +128,24 @@ CREATE TABLE public.profiles (
 **Notes:**
 
 - `id` matches `auth.users.id` exactly
-- Default role on signup is `customer` (set by `handle_new_user()` trigger)
-- To promote a user to super_admin: `UPDATE public.profiles SET role = 'super_admin' WHERE email = 'admin@example.com';`
+- Default role on signup is `customer` (set by `handle_new_user_perfume_store()` trigger)
+- To promote a user to super_admin: `UPDATE public.profiles_perfume_store SET role = 'super_admin' WHERE email = 'admin@example.com';`
 
 **RLS Policies:**
 
 | Policy | Command | Rule |
 |---|---|---|
 | Users can read own profile | SELECT | `auth.uid() = id` |
-| Admins can read all profiles | SELECT | `is_super_admin()` |
+| Admins can read all profiles_perfume_store | SELECT | `is_super_admin_perfume_store()` |
 
 ---
 
-### 3. `products`
+### 3. `products_perfume_store`
 
 Core product catalog.
 
 ```sql
-CREATE TABLE public.products (
+CREATE TABLE public.products_perfume_store (
   id                uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   title             text NOT NULL,
   slug              text NOT NULL,
@@ -154,7 +154,7 @@ CREATE TABLE public.products (
   base_image_url    text NOT NULL,
   is_active         boolean DEFAULT true,
   created_at        timestamptz NOT NULL DEFAULT timezone('utc', now()),
-  category_id       uuid REFERENCES public.categories(id) ON DELETE SET NULL,
+  category_id       uuid REFERENCES public.categories_perfume_store(id) ON DELETE SET NULL,
   brand             text,
   is_featured       boolean DEFAULT false,
   discount_percent  integer DEFAULT 0,
@@ -174,22 +174,22 @@ CREATE TABLE public.products (
 
 | Policy | Command | Rule |
 |---|---|---|
-| Public products are viewable | SELECT | `true` |
+| Public products_perfume_store are viewable | SELECT | `true` |
 | Public full access during dev | ALL | `true` |
-| Admins can insert products | INSERT | `auth.role() = 'authenticated'` |
-| Admins can update products | UPDATE | `auth.role() = 'authenticated'` |
-| Admins can delete products | DELETE | `auth.role() = 'authenticated'` |
+| Admins can insert products_perfume_store | INSERT | `auth.role() = 'authenticated'` |
+| Admins can update products_perfume_store | UPDATE | `auth.role() = 'authenticated'` |
+| Admins can delete products_perfume_store | DELETE | `auth.role() = 'authenticated'` |
 
 ---
 
-### 4. `product_variants`
+### 4. `product_variants_perfume_store`
 
 Each product can have multiple variants (e.g. size, volume). Price is set per variant.
 
 ```sql
-CREATE TABLE public.product_variants (
+CREATE TABLE public.product_variants_perfume_store (
   id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  product_id       uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id       uuid NOT NULL REFERENCES public.products_perfume_store(id) ON DELETE CASCADE,
   name             text NOT NULL,
   type             text NOT NULL,
   price            numeric NOT NULL,
@@ -212,12 +212,12 @@ CREATE TABLE public.product_variants (
 
 ---
 
-### 5. `delivery_zones`
+### 5. `delivery_zones_perfume_store`
 
 Defines delivery areas and their base prices.
 
 ```sql
-CREATE TABLE public.delivery_zones (
+CREATE TABLE public.delivery_zones_perfume_store (
   id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   name             text NOT NULL,
   region_category  text NOT NULL,
@@ -232,16 +232,16 @@ CREATE TABLE public.delivery_zones (
 | Policy | Command | Rule |
 |---|---|---|
 | Public read zones | SELECT | `true` |
-| Admins manage zones | ALL | `is_super_admin()` |
+| Admins manage zones | ALL | `is_super_admin_perfume_store()` |
 
 ---
 
-### 6. `taxes`
+### 6. `taxes_perfume_store`
 
-Tax rates applied to orders.
+Tax rates applied to orders_perfume_store.
 
 ```sql
-CREATE TABLE public.taxes (
+CREATE TABLE public.taxes_perfume_store (
   id           uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   name         text NOT NULL,
   rate_percent numeric NOT NULL,
@@ -254,21 +254,21 @@ CREATE TABLE public.taxes (
 
 | Policy | Command | Rule |
 |---|---|---|
-| Public read taxes | SELECT | `true` |
-| Admins manage taxes | ALL | `is_super_admin()` |
+| Public read taxes_perfume_store | SELECT | `true` |
+| Admins manage taxes_perfume_store | ALL | `is_super_admin_perfume_store()` |
 
 ---
 
-### 7. `orders`
+### 7. `orders_perfume_store`
 
-Customer orders. Uses a sequential `order_number` for human-readable order IDs.
+Customer orders_perfume_store. Uses a sequential `order_number` for human-readable order IDs.
 
 ```sql
-CREATE SEQUENCE orders_order_number_seq;
+CREATE SEQUENCE orders_perfume_store_order_number_seq;
 
-CREATE TABLE public.orders (
+CREATE TABLE public.orders_perfume_store (
   id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  order_number     integer NOT NULL DEFAULT nextval('orders_order_number_seq'),
+  order_number     integer NOT NULL DEFAULT nextval('orders_perfume_store_order_number_seq'),
   user_phone       text NOT NULL,
   user_email       text,
   total_amount     numeric NOT NULL,
@@ -282,7 +282,7 @@ CREATE TABLE public.orders (
   user_id          uuid REFERENCES auth.users(id) ON DELETE SET NULL,
   tax_amount       numeric DEFAULT 0,
   discount_amount  numeric DEFAULT 0,
-  delivery_zone_id uuid REFERENCES public.delivery_zones(id) ON DELETE SET NULL
+  delivery_zone_id uuid REFERENCES public.delivery_zones_perfume_store(id) ON DELETE SET NULL
 );
 ```
 
@@ -298,14 +298,14 @@ CREATE TABLE public.orders (
 
 ---
 
-### 8. `order_items`
+### 8. `order_items_perfume_store`
 
 Line items belonging to an order. Stores snapshot of product/price at time of purchase.
 
 ```sql
-CREATE TABLE public.order_items (
+CREATE TABLE public.order_items_perfume_store (
   id                 uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  order_id           uuid NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
+  order_id           uuid NOT NULL REFERENCES public.orders_perfume_store(id) ON DELETE CASCADE,
   product_title      text NOT NULL,
   variant_name       text NOT NULL,
   price_at_purchase  numeric NOT NULL,
@@ -323,12 +323,12 @@ CREATE TABLE public.order_items (
 
 ---
 
-### 9. `inventory_master`
+### 9. `inventory_master_perfume_store`
 
-Tracks stock levels for products.
+Tracks stock levels for products_perfume_store.
 
 ```sql
-CREATE TABLE public.inventory_master (
+CREATE TABLE public.inventory_master_perfume_store (
   id                   uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   product_name         text NOT NULL,
   current_stock_level  integer NOT NULL DEFAULT 0,
@@ -348,12 +348,12 @@ CREATE TABLE public.inventory_master (
 
 ---
 
-### 10. `store_settings`
+### 10. `store_settings_perfume_store`
 
 Single-row table for global store configuration. Always has `id = 1`.
 
 ```sql
-CREATE TABLE public.store_settings (
+CREATE TABLE public.store_settings_perfume_store (
   id                      integer PRIMARY KEY DEFAULT 1,
   whatsapp_phone          text DEFAULT '233240000000',
   support_email           text DEFAULT 'admin@liquorshop.gh',
@@ -369,14 +369,14 @@ CREATE TABLE public.store_settings (
   enable_backup_phone     boolean DEFAULT false,
   admin_alert_email       text,
   primary_phone           text DEFAULT '233240000000',
-  CONSTRAINT store_settings_single_row CHECK (id = 1)
+  CONSTRAINT store_settings_perfume_store_single_row CHECK (id = 1)
 );
 ```
 
 **Notes:**
 
-- Always query with `SELECT * FROM store_settings WHERE id = 1`
-- Always update with `UPDATE store_settings SET ... WHERE id = 1`
+- Always query with `SELECT * FROM store_settings_perfume_store WHERE id = 1`
+- Always update with `UPDATE store_settings_perfume_store SET ... WHERE id = 1`
 - Never insert a second row — the CHECK constraint prevents it
 
 **RLS Policies:**
@@ -384,16 +384,16 @@ CREATE TABLE public.store_settings (
 | Policy | Command | Rule |
 |---|---|---|
 | Public read settings | SELECT | `true` |
-| Admins update settings | UPDATE | `is_super_admin()` |
+| Admins update settings | UPDATE | `is_super_admin_perfume_store()` |
 
 ---
 
-### 11. `posts`
+### 11. `posts_perfume_store`
 
-Blog posts. Supports draft/published state and SEO metadata.
+Blog posts_perfume_store. Supports draft/published state and SEO metadata.
 
 ```sql
-CREATE TABLE public.posts (
+CREATE TABLE public.posts_perfume_store (
   id               uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   title            text NOT NULL,
   slug             text NOT NULL UNIQUE,
@@ -413,19 +413,19 @@ CREATE TABLE public.posts (
 
 | Policy | Command | Rule |
 |---|---|---|
-| Public can read published posts | SELECT | `is_published = true` |
-| Admins manage posts | ALL | `auth.role() = 'authenticated'` |
+| Public can read published posts_perfume_store | SELECT | `is_published = true` |
+| Admins manage posts_perfume_store | ALL | `auth.role() = 'authenticated'` |
 
 ---
 
-### 12. `product_reviews`
+### 12. `product_reviews_perfume_store`
 
-Customer reviews for products. Rating must be between 1 and 5.
+Customer reviews for products_perfume_store. Rating must be between 1 and 5.
 
 ```sql
-CREATE TABLE public.product_reviews (
+CREATE TABLE public.product_reviews_perfume_store (
   id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  product_id  uuid NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  product_id  uuid NOT NULL REFERENCES public.products_perfume_store(id) ON DELETE CASCADE,
   user_id     uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   rating      integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
   comment     text,
@@ -439,17 +439,17 @@ CREATE TABLE public.product_reviews (
 |---|---|---|
 | Users can create reviews | INSERT | `auth.uid() = user_id` |
 | Users can delete own reviews | DELETE | `auth.uid() = user_id` |
-| Admins can delete reviews | DELETE | `is_super_admin()` |
+| Admins can delete reviews | DELETE | `is_super_admin_perfume_store()` |
 | Public can read reviews | SELECT | `true` |
 
 ---
 
-### 13. `marketing_campaigns`
+### 13. `marketing_campaigns_perfume_store`
 
 Promotional banners and campaigns displayed on the storefront.
 
 ```sql
-CREATE TABLE public.marketing_campaigns (
+CREATE TABLE public.marketing_campaigns_perfume_store (
   id          uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   title       text NOT NULL,
   description text,
@@ -469,16 +469,16 @@ CREATE TABLE public.marketing_campaigns (
 | Policy | Command | Rule |
 |---|---|---|
 | Public view active campaigns | SELECT | `true` |
-| Admins manage campaigns | ALL | `is_super_admin()` |
+| Admins manage campaigns | ALL | `is_super_admin_perfume_store()` |
 
 ---
 
-### 14. `notification_templates`
+### 14. `notification_templates_perfume_store`
 
 SMS and email templates for automated notifications. Keyed by `trigger_id`.
 
 ```sql
-CREATE TABLE public.notification_templates (
+CREATE TABLE public.notification_templates_perfume_store (
   trigger_id     text PRIMARY KEY,
   name           text NOT NULL,
   sms_template   text,
@@ -498,16 +498,16 @@ CREATE TABLE public.notification_templates (
 | Policy | Command | Rule |
 |---|---|---|
 | Public read templates | SELECT | `true` |
-| Admins manage templates | ALL | `is_super_admin()` |
+| Admins manage templates | ALL | `is_super_admin_perfume_store()` |
 
 ---
 
-### 15. `sms_logs`
+### 15. `sms_logs_perfume_store`
 
 Audit log of all SMS messages sent by the system.
 
 ```sql
-CREATE TABLE public.sms_logs (
+CREATE TABLE public.sms_logs_perfume_store (
   id             uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
   phone          text NOT NULL,
   message        text NOT NULL,
@@ -523,7 +523,7 @@ CREATE TABLE public.sms_logs (
 
 | Policy | Command | Rule |
 |---|---|---|
-| Admins can view sms logs | SELECT | `is_super_admin()` |
+| Admins can view sms logs | SELECT | `is_super_admin_perfume_store()` |
 | No public inserts | INSERT | `false` (blocked) |
 
 ---
@@ -532,7 +532,7 @@ CREATE TABLE public.sms_logs (
 
 All buckets are **PUBLIC** with a **50MB** file size limit and allow **`image/*`** MIME types only.
 
-### `product-images`
+### `product-images-perfume-store`
 
 Stores product and variant images.
 
@@ -543,9 +543,9 @@ Stores product and variant images.
 | Admin Update | UPDATE | `auth.role() = 'authenticated'` |
 | Admin Delete | DELETE | `auth.role() = 'authenticated'` |
 
-### `blog-images`
+### `blog-images-perfume-store`
 
-Stores cover images for blog posts.
+Stores cover images for blog posts_perfume_store.
 
 | Policy | Command | Rule |
 |---|---|---|
@@ -553,7 +553,7 @@ Stores cover images for blog posts.
 | Admin Upload Blog | INSERT | `auth.role() = 'authenticated'` |
 | Admin Delete Blog | DELETE | `auth.role() = 'authenticated'` |
 
-### `marketing-assets`
+### `marketing-assets-perfume-store`
 
 Stores images for marketing campaigns and banners.
 
@@ -569,21 +569,21 @@ Stores images for marketing campaigns and banners.
 
 ```
 auth.users
-  ├── profiles (1:1, via trigger)
-  ├── orders (1:many, user_id)
-  └── product_reviews (1:many, user_id)
+  ├── profiles_perfume_store (1:1, via trigger)
+  ├── orders_perfume_store (1:many, user_id)
+  └── product_reviews_perfume_store (1:many, user_id)
 
-categories
-  ├── categories (self-ref, parent_id)
-  └── products (1:many, category_id)
+categories_perfume_store
+  ├── categories_perfume_store (self-ref, parent_id)
+  └── products_perfume_store (1:many, category_id)
 
-products
-  ├── product_variants (1:many, product_id)
-  └── product_reviews (1:many, product_id)
+products_perfume_store
+  ├── product_variants_perfume_store (1:many, product_id)
+  └── product_reviews_perfume_store (1:many, product_id)
 
-orders
-  ├── order_items (1:many, order_id)
-  └── delivery_zones (many:1, delivery_zone_id)
+orders_perfume_store
+  ├── order_items_perfume_store (1:many, order_id)
+  └── delivery_zones_perfume_store (many:1, delivery_zone_id)
 ```
 
 ---
@@ -591,39 +591,39 @@ orders
 ## Common Query Patterns
 
 ```sql
--- Get all active products with their category
+-- Get all active products_perfume_store with their category
 SELECT p.*, c.name as category_name
-FROM products p
-LEFT JOIN categories c ON p.category_id = c.id
+FROM products_perfume_store p
+LEFT JOIN categories_perfume_store c ON p.category_id = c.id
 WHERE p.is_active = true;
 
 -- Get all variants for a product
-SELECT * FROM product_variants
+SELECT * FROM product_variants_perfume_store
 WHERE product_id = 'your-product-uuid';
 
 -- Get an order with its items
 SELECT o.*, oi.*
-FROM orders o
-JOIN order_items oi ON oi.order_id = o.id
+FROM orders_perfume_store o
+JOIN order_items_perfume_store oi ON oi.order_id = o.id
 WHERE o.id = 'your-order-uuid';
 
 -- Get store settings (always id = 1)
-SELECT * FROM store_settings WHERE id = 1;
+SELECT * FROM store_settings_perfume_store WHERE id = 1;
 
 -- Get active delivery zones
-SELECT * FROM delivery_zones WHERE is_active = true;
+SELECT * FROM delivery_zones_perfume_store WHERE is_active = true;
 
--- Get active taxes ordered by priority
-SELECT * FROM taxes WHERE is_active = true ORDER BY priority ASC;
+-- Get active taxes_perfume_store ordered by priority
+SELECT * FROM taxes_perfume_store WHERE is_active = true ORDER BY priority ASC;
 
--- Get published blog posts
-SELECT * FROM posts WHERE is_published = true ORDER BY published_at DESC;
+-- Get published blog posts_perfume_store
+SELECT * FROM posts_perfume_store WHERE is_published = true ORDER BY published_at DESC;
 
 -- Check if current user is super_admin
-SELECT is_super_admin();
+SELECT is_super_admin_perfume_store();
 
 -- Promote a user to super_admin
-UPDATE profiles SET role = 'super_admin' WHERE email = 'admin@example.com';
+UPDATE profiles_perfume_store SET role = 'super_admin' WHERE email = 'admin@example.com';
 ```
 
 ---
@@ -631,7 +631,7 @@ UPDATE profiles SET role = 'super_admin' WHERE email = 'admin@example.com';
 ## Environment Variables
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://eominikzaajxzvmmpmtt.supabase.co
+NEXT_PUBLIC_SUPABASE_URL=https://lllipyzpdoiennpspafh.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 ```

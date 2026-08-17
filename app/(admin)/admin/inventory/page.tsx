@@ -12,7 +12,7 @@ export default async function InventoryPage() {
 
   // Fetch Inventory Master
   const { data: inventory, error } = await supabase
-    .from('inventory_master')
+    .from('inventory_master_perfume_store')
     .select('*')
     .order('product_name');
 

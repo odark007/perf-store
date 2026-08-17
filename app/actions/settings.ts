@@ -9,7 +9,7 @@ async function checkSuperAdmin() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Unauthorized');
 
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('profiles_perfume_store').select('role').eq('id', user.id).single();
   if (profile?.role !== 'super_admin') throw new Error('Permission Denied');
   
   return supabase;
@@ -28,7 +28,7 @@ export async function updateGeneralSettings(formData: FormData) {
     const bulk_surcharge = Number(formData.get('bulk_surcharge'));
 
     const { error } = await supabase
-      .from('store_settings')
+      .from('store_settings_perfume_store')
       .update({
         whatsapp_phone,
         primary_phone,
@@ -52,7 +52,7 @@ export async function updateGeneralSettings(formData: FormData) {
 export async function upsertZone(data: any) {
   try {
     const supabase = await checkSuperAdmin();
-    const { error } = await supabase.from('delivery_zones').upsert(data).select();
+    const { error } = await supabase.from('delivery_zones_perfume_store').upsert(data).select();
     if (error) throw error;
     revalidatePath('/admin/settings');
     return { success: true };
@@ -64,7 +64,7 @@ export async function upsertZone(data: any) {
 export async function deleteZone(id: string) {
   try {
     const supabase = await checkSuperAdmin();
-    const { error } = await supabase.from('delivery_zones').delete().eq('id', id);
+    const { error } = await supabase.from('delivery_zones_perfume_store').delete().eq('id', id);
     if (error) throw error;
     revalidatePath('/admin/settings');
     return { success: true };
@@ -77,7 +77,7 @@ export async function deleteZone(id: string) {
 export async function upsertTax(data: any) {
   try {
     const supabase = await checkSuperAdmin();
-    const { error } = await supabase.from('taxes').upsert(data).select();
+    const { error } = await supabase.from('taxes_perfume_store').upsert(data).select();
     if (error) throw error;
     revalidatePath('/admin/settings');
     return { success: true };
@@ -89,7 +89,7 @@ export async function upsertTax(data: any) {
 export async function deleteTax(id: string) {
   try {
     const supabase = await checkSuperAdmin();
-    const { error } = await supabase.from('taxes').delete().eq('id', id);
+    const { error } = await supabase.from('taxes_perfume_store').delete().eq('id', id);
     if (error) throw error;
     revalidatePath('/admin/settings');
     return { success: true };
@@ -116,7 +116,7 @@ export async function updateNotificationSettings(formData: FormData) {
     const admin_alert_email = formData.get('admin_alert_email') as string;
 
     const { error } = await supabase
-      .from('store_settings')
+      .from('store_settings_perfume_store')
       .update({
         master_sms_enabled,
         master_email_enabled,
@@ -146,7 +146,7 @@ export async function updateTemplate(triggerId: string, formData: FormData) {
     const is_active = formData.get('is_active') === 'on';
 
     const { error } = await supabase
-      .from('notification_templates')
+      .from('notification_templates_perfume_store')
       .update({
         sms_template,
         email_subject,

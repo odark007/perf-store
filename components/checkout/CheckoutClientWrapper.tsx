@@ -13,6 +13,7 @@ interface Props {
 const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes }) => {
   // State to sync Form selection with Summary calculation
   const [selectedZoneId, setSelectedZoneId] = useState<string>('');
+  const [wantsDelivery, setWantsDelivery] = useState(true);
 
   // Find the selected zone object
   const selectedZone = zones.find(z => z.id === selectedZoneId) || null;
@@ -25,6 +26,8 @@ const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes }) => {
            zones={zones} 
            selectedZoneId={selectedZoneId}
            setSelectedZoneId={setSelectedZoneId}
+           wantsDelivery={wantsDelivery}
+           setWantsDelivery={setWantsDelivery}
          />
       </div>
 
@@ -34,6 +37,7 @@ const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes }) => {
            settings={settings}
            taxes={taxes}
            selectedZone={selectedZone}
+           wantsDelivery={wantsDelivery}
          />
       </div>
     </div>

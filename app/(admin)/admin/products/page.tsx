@@ -30,12 +30,12 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const to = from + limit - 1;
 
   // 2. Fetch Categories (For Toolbar)
-  const { data: categories } = await supabase.from('categories').select('id, name').order('name');
+  const { data: categories } = await supabase.from('categories_perfume_store').select('id, name').order('name');
 
   // 3. Build Query
   let query = supabase
-    .from('products')
-    .select('*, categories(name)', { count: 'exact' });
+    .from('products_perfume_store')
+    .select('*, categories_perfume_store(name)', { count: 'exact' });
 
   if (searchTerm) {
     query = query.ilike('title', `%${searchTerm}%`);

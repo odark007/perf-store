@@ -14,9 +14,11 @@ interface Props {
   zones: any[];
   selectedZoneId: string;
   setSelectedZoneId: (id: string) => void;
+  wantsDelivery: boolean;
+  setWantsDelivery: (value: boolean) => void;
 }
 
-const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneId }) => {
+const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneId, wantsDelivery, setWantsDelivery }) => {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,8 +49,8 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Logic: Zone is required ONLY IF payment is NOT 'pay_later'
-  const isZoneRequired = paymentMethod !== 'pay_later';
+  // Logic: Zone is required ONLY IF the customer wants delivery
+  const isZoneRequired = wantsDelivery;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,9 +68,9 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
         items: items,
         userPhone: formData.phone,
         userEmail: formData.email || null,
-        // If not required and empty, send null. Otherwise send ID.
-        deliveryZoneId: selectedZoneId || null,
-        deliveryAddress: formData.address,
+        // If delivery not wanted, send null zone and no address.
+        deliveryZoneId: wantsDelivery ? (selectedZoneId || null) : null,
+        deliveryAddress: wantsDelivery ? formData.address : '',
         paymentMethod: paymentMethod,
         notes: `${formData.firstName} ${formData.lastName || ''} - ${formData.notes}`,
       });
@@ -135,6 +137,37 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
             Delivery Details
           </h3>
 
+          {/* Toggle: Want Delivery? */}
+          <label className={`flex items-center justify-between gap-4 p-4 mb-4 border-2 rounded-xl cursor-pointer transition-all ${wantsDelivery ? 'border-primary-500 bg-primary-50 shadow-sm' : 'border-secondary-300 bg-white hover:border-primary-300'}`}>
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-lg transition-colors ${wantsDelivery ? 'bg-primary-600 text-white' : 'bg-secondary-100 text-secondary-400'}`}>
+                <Truck size={22} />
+              </div>
+              <div>
+                <p className="font-semibold text-secondary-900">I want delivery to my address</p>
+                <p className="text-sm text-secondary-500">{wantsDelivery ? 'Delivery to your door will be added to your total.' : 'Pickup / instant online payment — no delivery fee.'}</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1.5">
+              <span className={`text-[10px] font-bold uppercase tracking-widest ${wantsDelivery ? 'text-primary-600' : 'text-secondary-400'}`}>
+                {wantsDelivery ? 'On' : 'Off'}
+              </span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={wantsDelivery}
+                aria-label="Toggle delivery"
+                onClick={() => {
+                  setWantsDelivery(!wantsDelivery);
+                  if (wantsDelivery) setSelectedZoneId('');
+                }}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 ${wantsDelivery ? 'bg-gradient-to-r from-primary-500 to-primary-700 shadow-inner' : 'bg-secondary-300'}`}
+              >
+                <span className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${wantsDelivery ? 'translate-x-7' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          </label>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-secondary-700 mb-1">First Name *</label>
@@ -153,38 +186,46 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
               <input name="email" type="email" value={formData.email} className="w-full p-2.5 border rounded-lg focus:border-primary-500" onChange={handleInputChange} />
             </div>
             
-            {/* ZONE DROPDOWN */}
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-secondary-700 mb-1">
-                Delivery Zone {isZoneRequired ? '*' : '(Optional)'}
-              </label>
-              <select 
-                required={isZoneRequired}
-                value={selectedZoneId} 
-                onChange={(e) => setSelectedZoneId(e.target.value)} 
-                className={`w-full p-2.5 bg-secondary-50 border rounded-lg focus:border-primary-500 font-medium ${!isZoneRequired ? 'border-dashed border-secondary-300' : 'border-secondary-200'}`}
-              >
-                <option value="">
-                  {isZoneRequired ? 'Select your delivery zone...' : 'No Zone Selected (Pay Later)'}
-                </option>
-                <optgroup label="Greater Accra">
-                  {accraZones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                </optgroup>
-                <optgroup label="Other Regions">
-                  {regionalZones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                </optgroup>
-                {intlZones.length > 0 && (
-                   <optgroup label="International">
-                     {intlZones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                   </optgroup>
-                )}
-              </select>
-            </div>
+            {wantsDelivery && (
+              <>
+                {/* ZONE DROPDOWN */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-secondary-700 mb-1">
+                    Delivery Zone *
+                  </label>
+                  <select 
+                    required
+                    value={selectedZoneId} 
+                    onChange={(e) => setSelectedZoneId(e.target.value)} 
+                    className="w-full p-2.5 bg-secondary-50 border border-secondary-200 rounded-lg focus:border-primary-500 font-medium"
+                  >
+                    <option value="">Select your delivery zone...</option>
+                    <optgroup label="Greater Accra">
+                      {accraZones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                    </optgroup>
+                    <optgroup label="Other Regions">
+                      {regionalZones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                    </optgroup>
+                    {intlZones.length > 0 && (
+                       <optgroup label="International">
+                         {intlZones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                       </optgroup>
+                    )}
+                  </select>
+                </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-secondary-700 mb-1">Specific Address *</label>
-              <input required name="address" placeholder="House/Street/Landmark" className="w-full p-2.5 border rounded-lg focus:border-primary-500" onChange={handleInputChange} />
-            </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-secondary-700 mb-1">Specific Address *</label>
+                  <input required name="address" placeholder="House/Street/Landmark" className="w-full p-2.5 border rounded-lg focus:border-primary-500" onChange={handleInputChange} />
+                </div>
+              </>
+            )}
+
+            {!wantsDelivery && (
+              <div className="md:col-span-2 bg-green-50 text-green-700 px-4 py-3 rounded-lg text-sm">
+                No delivery selected. You can pay online instantly and pick up your items.
+              </div>
+            )}
           </div>
         </div>
 
@@ -220,13 +261,13 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
           </div>
         </div>
 
-        {/* Button: Enable if items > 0 AND (Zone Selected OR Pay Later) */}
+        {/* Button: Enable if items > 0 AND (Zone Selected OR No Delivery) */}
         <Button 
           type="submit" 
           size="lg" 
           fullWidth 
           isLoading={isSubmitting} 
-          disabled={items.length === 0 || (!selectedZoneId && isZoneRequired)} 
+          disabled={items.length === 0 || (wantsDelivery && !selectedZoneId)} 
           rightIcon={<CheckCircle size={20} />}
         >
           Place Order

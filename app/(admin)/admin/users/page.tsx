@@ -16,7 +16,7 @@ export default async function UsersPage() {
   if (!user) return <div>Unauthorized</div>;
 
   const { data: currentUserProfile } = await supabase
-    .from('profiles')
+    .from('profiles_perfume_store')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -38,7 +38,7 @@ export default async function UsersPage() {
 
   // 3. Fetch All Users (Only runs if passed the gate above)
   const { data: profiles, error } = await supabase
-    .from('profiles')
+    .from('profiles_perfume_store')
     .select('*')
     .order('created_at', { ascending: false });
 

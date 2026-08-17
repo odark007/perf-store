@@ -21,19 +21,13 @@ jest.mock('@/lib/supabase/server', () => ({
                 then: jest.fn(), // Placeholder
             };
 
-            // Implement 'then' to resolve data based on table context
-            // We use a getter or simple implementation to resolve differently?
-            // Actually simpliest is to make specific methods resolve specific data if awaited?
-            // But Supabase is: query.then().
-            // Let's modify the chain based on what's called.
-
             const resolveData = (data: any, error: any = null) => {
                 return Promise.resolve({ data, error });
             };
 
             // Default responses
             let responseData: any = [];
-            if (table === 'product_variants') {
+            if (table === 'product_variants_perfume_store') {
                 responseData = [{
                     id: 'variant-1',
                     stock_deduction: 1,
@@ -42,11 +36,11 @@ jest.mock('@/lib/supabase/server', () => ({
                     inventory: { id: 'master-1', current_stock_level: 100 },
                     product: { is_featured: false, discount_percent: 0 }
                 }];
-            } else if (table === 'orders') {
+            } else if (table === 'orders_perfume_store') {
                 responseData = { id: 'order-123', order_number: 'ORD-001' };
-            } else if (table === 'store_settings') {
+            } else if (table === 'store_settings_perfume_store') {
                 responseData = { bulk_threshold: 10, bulk_surcharge: 5 };
-            } else if (table === 'delivery_zones') {
+            } else if (table === 'delivery_zones_perfume_store') {
                 responseData = { base_price: 10 };
             }
 
@@ -57,33 +51,35 @@ jest.mock('@/lib/supabase/server', () => ({
                 return { data: Array.isArray(responseData) ? responseData[0] : responseData, error: null };
             });
 
-            // Special logic for specific chains if needed
-            if (table === 'product_variants') {
-                mockChain.in = jest.fn().mockReturnThis(); // Valid
-            }
-
             return mockChain;
         }),
     }),
 }));
 
-// 2. Mock Supabase Client (for webhook) - verifying it is mocked appropriately
+// 2. Mock Supabase Client (for webhook)
 jest.mock('@supabase/supabase-js', () => ({
     createClient: jest.fn().mockReturnValue({
         from: jest.fn().mockReturnValue({
             update: jest.fn().mockReturnThis(),
-            select: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
-            single: jest.fn().mockResolvedValue({
-                data: {
-                    order_number: 'ORD-webhook',
-                    notes: 'Customer Name - Notes',
-                    total_amount: 500,
-                    user_phone: '123',
-                    user_email: 'test@test.com'
-                },
-                error: null
-            })
+            // .select('id') resolves the update result (array of updated rows)
+            select: jest.fn().mockImplementation((cols: string) =>
+                cols === 'id'
+                    ? Promise.resolve({ data: [{ id: 'order-123' }], error: null })
+                    : ({
+                        eq: jest.fn().mockReturnThis(),
+                        single: jest.fn().mockResolvedValue({
+                            data: {
+                                order_number: 'ORD-webhook',
+                                notes: 'Customer Name - Notes',
+                                total_amount: 500,
+                                user_phone: '123',
+                                user_email: 'test@test.com'
+                            },
+                            error: null
+                        })
+                    })
+            )
         })
     })
 }));
@@ -97,6 +93,7 @@ jest.mock('@/lib/notification', () => ({
 jest.mock('@/lib/utils', () => ({
     getDiscountedPrice: jest.fn().mockReturnValue({ finalPrice: 100 }),
     formatCurrency: jest.fn(val => `$${val}`),
+    formatPhoneForGH: jest.fn(val => val),
 }));
 
 // 5. Mock Next Request/Response for Webhook
@@ -110,15 +107,41 @@ jest.mock('next/server', () => ({
     },
 }));
 
+jest.mock('crypto', () => ({
+    createHmac: jest.fn().mockReturnValue({
+        update: jest.fn().mockReturnValue({
+            digest: jest.fn().mockReturnValue('mock-hash')
+        })
+    })
+}));
+
+// 6. Mock the order_data sent to notifications for objectContaining checks
+interface OrderData {
+    order_number: string;
+    customer_name: string;
+    user_email: string;
+}
+
+const castNotification = sendNotification as unknown as jest.Mock;
 
 describe('Notification System Tests', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    test('checkout.ts: placeOrder() triggers admin_new_order and customer_confirmation', async () => {
+    test('checkout.ts: placeOrder() triggers new_order_admin and new_order_customer for manual payment', async () => {
         const payload = {
-            items: [{ variantId: 'variant-1', quantity: 1, title: 'Test Product', variantName: 'Default' }],
+            items: [{
+                variantId: 'variant-1',
+                quantity: 1,
+                title: 'Test Product',
+                variantName: 'Default',
+                price: 100,
+                productId: 'product-1',
+                image: '',
+                stockDeduction: 1,
+                masterStockTotal: 100
+            }],
             userPhone: '1234567890',
             userEmail: 'test@example.com',
             deliveryZoneId: 'zone-1',
@@ -138,22 +161,50 @@ describe('Notification System Tests', () => {
 
         // VERIFY NOTIFICATIONS
         // We expect 2 calls. If not, print what we got.
-        if (sendNotification.mock.calls.length !== 2) {
-            console.log('sendNotification calls:', sendNotification.mock.calls);
+        if (castNotification.mock.calls.length !== 2) {
+            console.log('sendNotification calls:', castNotification.mock.calls);
         }
-        expect(sendNotification).toHaveBeenCalledTimes(2);
-        expect(sendNotification).toHaveBeenCalledWith('admin_new_order', expect.objectContaining({
+        expect(castNotification).toHaveBeenCalledTimes(2);
+        expect(castNotification).toHaveBeenCalledWith('new_order_admin', expect.objectContaining({
             order_number: 'ORD-001',
             customer_name: 'Test Customer',
             user_email: 'test@example.com'
         }));
-        expect(sendNotification).toHaveBeenCalledWith('customer_confirmation', expect.objectContaining({
+        expect(castNotification).toHaveBeenCalledWith('new_order_customer', expect.objectContaining({
             order_number: 'ORD-001',
             customer_name: 'Test Customer'
         }));
     });
 
-    test('route.ts: Webhook triggers payment_received on charge.success', async () => {
+    test('checkout.ts: placeOrder() does NOT send notifications for paystack at checkout', async () => {
+        const payload = {
+            items: [{
+                variantId: 'variant-1',
+                quantity: 1,
+                title: 'Test Product',
+                variantName: 'Default',
+                price: 100,
+                productId: 'product-1',
+                image: '',
+                stockDeduction: 1,
+                masterStockTotal: 100
+            }],
+            userPhone: '1234567890',
+            userEmail: 'test@example.com',
+            deliveryZoneId: null,
+            deliveryAddress: '',
+            paymentMethod: 'paystack',
+            notes: 'Test Customer - Notes'
+        };
+
+        const result = await placeOrder(payload);
+
+        expect(result).toHaveProperty('success', true);
+        // Paystack: notifications must wait for payment confirmation
+        expect(castNotification).not.toHaveBeenCalled();
+    });
+
+    test('route.ts: Webhook triggers new_order_admin and new_order_customer on charge.success', async () => {
         const body = JSON.stringify({
             event: 'charge.success',
             data: {
@@ -174,18 +225,15 @@ describe('Notification System Tests', () => {
 
         expect(json).toEqual({ received: true });
 
-        // Verify Notification
-        expect(sendNotification).toHaveBeenCalledWith('payment_received', expect.objectContaining({
+        // Verify Notifications (webhook sends the standard new-order alerts since
+        // they were skipped at checkout)
+        expect(castNotification).toHaveBeenCalledWith('new_order_admin', expect.objectContaining({
+            order_number: 'ORD-webhook',
+            total_amount: 500
+        }));
+        expect(castNotification).toHaveBeenCalledWith('new_order_customer', expect.objectContaining({
             order_number: 'ORD-webhook',
             total_amount: 500
         }));
     });
 });
-
-jest.mock('crypto', () => ({
-    createHmac: jest.fn().mockReturnValue({
-        update: jest.fn().mockReturnValue({
-            digest: jest.fn().mockReturnValue('mock-hash')
-        })
-    })
-}));

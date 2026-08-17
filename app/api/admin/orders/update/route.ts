@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     // 2. Fetch Current Status BEFORE Update (Safety Check)
     const { data: currentOrder, error: fetchError } = await supabase
-      .from('orders')
+      .from('orders_perfume_store')
       .select('payment_status, delivery_status')
       .eq('id', orderId)
       .single();
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
       // A. Get Items
       const { data: items } = await supabase
-        .from('order_items')
+        .from('order_items_perfume_store')
         .select('*')
         .eq('order_id', orderId);
 
@@ -38,10 +38,10 @@ export async function POST(req: Request) {
         for (const item of items) {
           // B. Find matching Variant to get Inventory ID and Deduction amount
           const { data: variants } = await supabase
-            .from('product_variants')
-            .select('id, stock_deduction, master_stock_id, products!inner(title)')
+            .from('product_variants_perfume_store')
+            .select('id, stock_deduction, master_stock_id, products_perfume_store!inner(title)')
             .eq('name', item.variant_name)
-            .eq('products.title', item.product_title);
+            .eq('products_perfume_store.title', item.product_title);
 
           const variant = variants?.[0];
 
@@ -51,14 +51,14 @@ export async function POST(req: Request) {
 
             // D. Increment Master Inventory
             const { data: inventory } = await supabase
-              .from('inventory_master')
+              .from('inventory_master_perfume_store')
               .select('current_stock_level')
               .eq('id', variant.master_stock_id)
               .single();
 
             if (inventory) {
               await supabase
-                .from('inventory_master')
+                .from('inventory_master_perfume_store')
                 .update({ current_stock_level: inventory.current_stock_level + amountToReturn })
                 .eq('id', variant.master_stock_id);
               
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
 
     // 4. Update Database Status
     const { error } = await supabase
-      .from('orders')
+      .from('orders_perfume_store')
       .update({ [field]: value })
       .eq('id', orderId);
 
@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     // 5. Trigger Notification via Engine
     // We need to fetch full order details to populate template variables (email, phone, etc)
     const { data: fullOrder } = await supabase
-      .from('orders')
+      .from('orders_perfume_store')
       .select('order_number, user_phone, user_email, total_amount, notes')
       .eq('id', orderId)
       .single();

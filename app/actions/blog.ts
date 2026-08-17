@@ -28,7 +28,7 @@ export async function createPost(formData: FormData) {
     // Auto-generate slug (add random string to avoid collision)
     const slug = `${generateSlug(title)}-${Date.now().toString().slice(-4)}`;
 
-    const { error } = await supabase.from('posts').insert({
+    const { error } = await supabase.from('posts_perfume_store').insert({
       title,
       slug,
       content,
@@ -61,7 +61,7 @@ export async function updatePost(id: string, formData: FormData) {
     const is_published = formData.get('is_published') === 'true';
     // We don't update slug to preserve SEO
 
-    const { error } = await supabase.from('posts').update({
+    const { error } = await supabase.from('posts_perfume_store').update({
       title,
       content,
       excerpt,
@@ -87,17 +87,17 @@ export async function deletePost(id: string) {
 
   // 1. Get the post to find the image URL
   const { data: post } = await supabase
-    .from('posts')
+    .from('posts_perfume_store')
     .select('cover_image_url')
     .eq('id', id)
     .single();
 
   // 2. Delete the Image from Storage (if it exists and is ours)
-  if (post?.cover_image_url && post.cover_image_url.includes('blog-images')) {
+  if (post?.cover_image_url && post.cover_image_url.includes('blog-images-perfume-store')) {
     try {
       const path = post.cover_image_url.split('/blog-images/')[1];
       if (path) {
-        await supabase.storage.from('blog-images').remove([path]);
+        await supabase.storage.from('blog-images-perfume-store').remove([path]);
       }
     } catch (err) {
       console.error("Failed to cleanup image", err);
@@ -105,7 +105,7 @@ export async function deletePost(id: string) {
   }
 
   // 3. Delete the Post Row
-  const { error } = await supabase.from('posts').delete().eq('id', id);
+  const { error } = await supabase.from('posts_perfume_store').delete().eq('id', id);
   if (error) return { error: error.message };
 
   revalidatePath('/blog');

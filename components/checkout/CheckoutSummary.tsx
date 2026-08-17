@@ -10,9 +10,10 @@ interface Props {
   settings: any;
   taxes: any[];
   selectedZone: any | null;
+  wantsDelivery: boolean;
 }
 
-const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone }) => {
+const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone, wantsDelivery }) => {
   const { items, getSubtotal, getTotalItems } = useCartStore();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -34,8 +35,8 @@ const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone }) => 
   let deliveryFee = 0;
   let bulkSurcharge = 0;
 
-  if (selectedZone) {
-    deliveryFee = selectedZone.base_price;
+  if (wantsDelivery && selectedZone) {
+    deliveryFee = Number(selectedZone.base_price) || 0;
     // Bulk Logic: If items > threshold, add surcharge for each extra item
     if (totalItemCount > settings.bulk_threshold) {
       const extraItems = totalItemCount - settings.bulk_threshold;
@@ -101,7 +102,9 @@ const CheckoutSummary: React.FC<Props> = ({ settings, taxes, selectedZone }) => 
         {/* Dynamic Delivery */}
         <div className="flex justify-between">
           <span>Delivery {bulkSurcharge > 0 && <span className="text-xs italic text-amber-600">(Includes Bulk Surcharge)</span>}</span>
-          {selectedZone ? (
+          {!wantsDelivery ? (
+            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">No Delivery</span>
+          ) : selectedZone ? (
             <span className="font-medium text-secondary-900">{formatCurrency(deliveryFee)}</span>
           ) : (
             <span className="text-xs bg-secondary-200 px-2 py-0.5 rounded">Select Zone</span>

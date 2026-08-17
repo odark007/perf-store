@@ -8,7 +8,7 @@ const WHITELISTED_HOSTS = [
     'unsplash.com',
     'images.unsplash.com',
     'encrypted-tbn0.gstatic.com',
-    'eominikzaajxzvmmpmtt.supabase.co',
+    'lllipyzpdoiennpspafh.supabase.co',
     'placehold.co',
     'localhost'
 ];

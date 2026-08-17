@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, User, MapPin, Phone, Mail } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import OrderActions from '@/components/admin/OrderActions';
 import Badge from '@/components/ui/Badge';
 import CopyableText from '@/components/ui/CopyableText';
@@ -15,14 +15,14 @@ export const dynamic = 'force-dynamic';
 
 export default async function OrderDetailPage({ params }: PageProps) {
     const { id } = await params;
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // 1. Fetch Order + Items
     const { data: order, error } = await supabase
-        .from('orders')
+        .from('orders_perfume_store')
         .select(`
       *,
-      items:order_items(*)
+      items:order_items_perfume_store(*)
     `)
         .eq('id', id)
         .single();
@@ -78,7 +78,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                                             {item.quantity} x GH₵{item.price_at_purchase}
                                         </p>
                                         <p className="font-bold text-secondary-900">
-                                            GH₵{item.subtotal.toFixed(2)}
+                                            GH₵{Number(item.subtotal).toFixed(2)}
                                         </p>
                                     </div>
                                 </div>
@@ -86,7 +86,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
                             <div className="p-4 bg-secondary-50 flex justify-between items-center border-t border-secondary-200">
                                 <span className="font-bold text-secondary-700">Total Amount</span>
                                 <span className="text-xl font-bold text-secondary-900">
-                                    GH₵{order.total_amount.toFixed(2)}
+                                    GH₵{Number(order.total_amount).toFixed(2)}
                                 </span>
                             </div>
                         </div>

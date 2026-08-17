@@ -28,7 +28,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   if (categorySlug) {
     const { data: cat } = await supabase
-      .from('categories')
+      .from('categories_perfume_store')
       .select('id')
       .eq('slug', categorySlug)
       .single();
@@ -42,8 +42,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   // 3. Fetch Metadata (Categories, Brands, Concentration, Scent Family)
   const [categoriesRes, productsMetaRes] = await Promise.all([
-    supabase.from('categories').select('id, name, slug').order('name'),
-    supabase.from('products').select('brand, concentration, scent_family')
+    supabase.from('categories_perfume_store').select('id, name, slug').order('name'),
+    supabase.from('products_perfume_store').select('brand, concentration, scent_family')
   ]);
 
   const categories = categoriesRes.data || [];
@@ -55,12 +55,12 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   // 4. Build Main Product Query
   let query = supabase
-    .from('products')
+    .from('products_perfume_store')
     .select(`
       *,
-      variants:product_variants!inner (
+      variants:product_variants_perfume_store!inner (
         *,
-        inventory:inventory_master (current_stock_level)
+        inventory:inventory_master_perfume_store (current_stock_level)
       )
     `);
 

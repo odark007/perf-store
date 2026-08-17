@@ -20,7 +20,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   onRemove,
   folder = 'uploads',
-  bucket = 'product-images' // Default to product bucket
+  bucket = 'product-images-perfume-store' // Default to product bucket
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);

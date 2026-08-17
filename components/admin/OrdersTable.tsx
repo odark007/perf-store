@@ -65,7 +65,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders }) => {
                     {order.user_phone}
                   </td>
                   <td className="px-6 py-4 font-semibold text-secondary-900">
-                    GH₵{order.total_amount.toFixed(2)}
+                    GH₵{Number(order.total_amount).toFixed(2)}
                   </td>
                   <td className="px-6 py-4">
                     {getPaymentBadge(order.payment_status)}

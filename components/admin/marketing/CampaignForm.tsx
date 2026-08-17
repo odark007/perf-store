@@ -145,7 +145,7 @@ const CampaignForm: React.FC<Props> = ({ initialData, featuredProducts, categori
                 value={mediaUrl} 
                 onChange={setMediaUrl} 
                 onRemove={() => setMediaUrl('')} 
-                bucket="marketing-assets"
+                bucket="marketing-assets-perfume-store"
                 folder="banners"
               />
             ) : (

@@ -12,7 +12,7 @@ export const revalidate = 60; // Refresh settings every minute
 
 export default async function ContactPage() {
   const supabase = await createClient();
-  const { data: settings } = await supabase.from('store_settings').select('*').single();
+  const { data: settings } = await supabase.from('store_settings_perfume_store').select('*').single();
 
   // Helper to clean phone for href="tel:..."
   const cleanPhone = (phone: string) => phone ? `+${phone.replace(/\D/g, '')}` : '#';

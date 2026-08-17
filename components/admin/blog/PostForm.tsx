@@ -127,7 +127,7 @@ const PostForm: React.FC<Props> = ({ initialData }) => {
               onChange={setImage}
               onRemove={() => setImage('')}
               folder="blog"
-              bucket="blog-images"
+              bucket="blog-images-perfume-store"
             />
           </div>
         </div>

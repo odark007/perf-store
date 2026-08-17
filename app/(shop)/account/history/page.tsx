@@ -20,10 +20,10 @@ export default async function OrderHistoryPage() {
   }
 
   const { data: orders } = await supabase
-    .from('orders')
+    .from('orders_perfume_store')
     .select(`
       *,
-      items:order_items(*)
+      items:order_items_perfume_store(*)
     `)
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });

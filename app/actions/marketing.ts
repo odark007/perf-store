@@ -27,7 +27,7 @@ export async function createCampaign(formData: FormData) {
       is_active: formData.get('is_active') === 'true',
     };
 
-    const { error } = await supabase.from('marketing_campaigns').insert(data);
+    const { error } = await supabase.from('marketing_campaigns_perfume_store').insert(data);
     if (error) throw error;
 
     revalidatePath('/');
@@ -44,17 +44,17 @@ export async function deleteCampaign(id: string) {
 
     // 1. Get Campaign to check for Image
     const { data: campaign } = await supabase
-      .from('marketing_campaigns')
+      .from('marketing_campaigns_perfume_store')
       .select('media_url, media_type')
       .eq('id', id)
       .single();
 
     // 2. Clean up Storage (Ghost File Logic)
-    if (campaign && campaign.media_type === 'image' && campaign.media_url.includes('marketing-assets')) {
+    if (campaign && campaign.media_type === 'image' && campaign.media_url.includes('marketing-assets-perfume-store')) {
       try {
         const path = campaign.media_url.split('/marketing-assets/')[1];
         if (path) {
-          await supabase.storage.from('marketing-assets').remove([path]);
+          await supabase.storage.from('marketing-assets-perfume-store').remove([path]);
         }
       } catch (err) {
         console.error("Failed to delete banner image", err);
@@ -62,7 +62,7 @@ export async function deleteCampaign(id: string) {
     }
 
     // 3. Delete DB Row
-    const { error } = await supabase.from('marketing_campaigns').delete().eq('id', id);
+    const { error } = await supabase.from('marketing_campaigns_perfume_store').delete().eq('id', id);
     if (error) throw error;
 
     revalidatePath('/');
@@ -76,7 +76,7 @@ export async function deleteCampaign(id: string) {
 export async function toggleCampaignStatus(id: string, currentStatus: boolean) {
   try {
     const supabase = await checkAdmin();
-    await supabase.from('marketing_campaigns').update({ is_active: !currentStatus }).eq('id', id);
+    await supabase.from('marketing_campaigns_perfume_store').update({ is_active: !currentStatus }).eq('id', id);
     revalidatePath('/admin/marketing');
     revalidatePath('/');
     return { success: true };
@@ -95,16 +95,16 @@ export async function updateCampaign(id: string, formData: FormData) {
 
     // 1. Ghost File Cleanup logic
     const { data: oldCampaign } = await supabase
-      .from('marketing_campaigns')
+      .from('marketing_campaigns_perfume_store')
       .select('media_url, media_type')
       .eq('id', id)
       .single();
 
     if (oldCampaign && oldCampaign.media_url !== media_url) {
-      if (oldCampaign.media_type === 'image' && oldCampaign.media_url.includes('marketing-assets')) {
+      if (oldCampaign.media_type === 'image' && oldCampaign.media_url.includes('marketing-assets-perfume-store')) {
         try {
           const path = oldCampaign.media_url.split('/marketing-assets/')[1];
-          if (path) await supabase.storage.from('marketing-assets').remove([path]);
+          if (path) await supabase.storage.from('marketing-assets-perfume-store').remove([path]);
         } catch (err) {
           console.error("Image cleanup failed", err);
         }
@@ -126,7 +126,7 @@ export async function updateCampaign(id: string, formData: FormData) {
 
     // 3. Update DB
     const { error } = await supabase
-      .from('marketing_campaigns')
+      .from('marketing_campaigns_perfume_store')
       .update(data)
       .eq('id', id);
 

@@ -13,7 +13,7 @@ export default async function ShopLayout({
 
   // Fetch Store Settings for Footer/Contact info
   const { data: settings } = await supabase
-    .from('store_settings')
+    .from('store_settings_perfume_store')
     .select('*')
     .single();
 

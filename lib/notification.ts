@@ -60,7 +60,7 @@ export async function sendNotification(triggerId: string, orderData: any) {
     const supabase = await createClient();
 
     // 1. Fetch Global Settings
-    const { data: settings, error: settingsError } = await supabase.from('store_settings').select('*').single();
+    const { data: settings, error: settingsError } = await supabase.from('store_settings_perfume_store').select('*').single();
 
     if (settingsError || !settings) {
       console.error("[Notification] Failed to fetch settings:", settingsError);
@@ -69,7 +69,7 @@ export async function sendNotification(triggerId: string, orderData: any) {
 
     // 2. Fetch Template
     const { data: template, error: templateError } = await supabase
-      .from('notification_templates')
+      .from('notification_templates_perfume_store')
       .select('*')
       .eq('trigger_id', triggerId)
       .single();

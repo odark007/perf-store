@@ -6,8 +6,8 @@ export default async function CreateCampaignPage() {
   const supabase = await createClient();
 
   const [productsRes, categoriesRes] = await Promise.all([
-    supabase.from('products').select('id, title, slug').eq('is_featured', true),
-    supabase.from('categories').select('id, name, slug')
+    supabase.from('products_perfume_store').select('id, title, slug').eq('is_featured', true),
+    supabase.from('categories_perfume_store').select('id, name, slug')
   ]);
 
   return (

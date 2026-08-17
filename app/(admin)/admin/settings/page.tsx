@@ -13,10 +13,10 @@ export default async function SettingsPage() {
   // Fetch all settings data
   // FIX: Added 'templatesRes' to the variable list [ ... ]
   const [settingsRes, zonesRes, taxesRes, templatesRes] = await Promise.all([
-    supabase.from('store_settings').select('*').single(),
-    supabase.from('delivery_zones').select('*').order('name'),
-    supabase.from('taxes').select('*').order('priority'),
-    supabase.from('notification_templates').select('*').order('name'),
+    supabase.from('store_settings_perfume_store').select('*').single(),
+    supabase.from('delivery_zones_perfume_store').select('*').order('name'),
+    supabase.from('taxes_perfume_store').select('*').order('priority'),
+    supabase.from('notification_templates_perfume_store').select('*').order('name'),
   ]);
 
   const settings = settingsRes.data || {};

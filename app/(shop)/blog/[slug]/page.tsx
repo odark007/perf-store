@@ -12,7 +12,7 @@ interface PageProps {
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
   const supabase = await createClient();
-  const { data: post } = await supabase.from('posts').select('*').eq('slug', slug).single();
+  const { data: post } = await supabase.from('posts_perfume_store').select('*').eq('slug', slug).single();
 
   if (!post) return { title: 'Not Found' };
 
@@ -30,7 +30,7 @@ export default async function BlogPostPage({ params }: PageProps) {
   const supabase = await createClient();
 
   const { data: post } = await supabase
-    .from('posts')
+    .from('posts_perfume_store')
     .select('*')
     .eq('slug', slug)
     .eq('is_published', true)

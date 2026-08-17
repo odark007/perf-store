@@ -104,7 +104,7 @@ const ZoneGroup = ({ title, zones, onEdit, onDelete }: any) => {
           <div key={zone.id} className="px-6 py-4 flex justify-between items-center hover:bg-secondary-50">
             <div>
               <p className="font-medium text-secondary-900">{zone.name}</p>
-              <p className="text-sm text-secondary-500">Base: GH₵{zone.base_price.toFixed(2)}</p>
+              <p className="text-sm text-secondary-500">Base: GH₵{Number(zone.base_price).toFixed(2)}</p>
             </div>
             <div className="flex gap-2">
               <button onClick={() => onEdit(zone)} className="text-blue-600 hover:underline text-sm">Edit</button>

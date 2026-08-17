@@ -10,7 +10,7 @@ async function checkPermissions() {
   if (!user) throw new Error('Unauthorized');
 
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('profiles_perfume_store')
     .select('role')
     .eq('id', user.id)
     .single();
@@ -27,7 +27,7 @@ export async function restockInventory(inventoryId: string, quantityToAdd: numbe
 
     // 1. Get current level
     const { data: current, error: fetchError } = await supabase
-      .from('inventory_master')
+      .from('inventory_master_perfume_store')
       .select('current_stock_level, product_name')
       .eq('id', inventoryId)
       .single();
@@ -38,7 +38,7 @@ export async function restockInventory(inventoryId: string, quantityToAdd: numbe
 
     // 2. Update level
     const { error: updateError } = await supabase
-      .from('inventory_master')
+      .from('inventory_master_perfume_store')
       .update({ current_stock_level: newLevel })
       .eq('id', inventoryId);
 

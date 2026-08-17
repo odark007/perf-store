@@ -12,14 +12,14 @@ export default async function EditProductPage({ params }: PageProps) {
   const supabase = await createClient();
 
   // 1. Fetch Categories
-  const { data: categories } = await supabase.from('categories').select('id, name').order('name');
+  const { data: categories } = await supabase.from('categories_perfume_store').select('id, name').order('name');
 
   // 2. Fetch Product with Variants
   const { data: product, error } = await supabase
-    .from('products')
+    .from('products_perfume_store')
     .select(`
       *,
-      variants:product_variants(*)
+      variants:product_variants_perfume_store(*)
     `)
     .eq('id', id)
     .single();

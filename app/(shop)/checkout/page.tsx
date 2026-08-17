@@ -10,9 +10,9 @@ export default async function CheckoutPage() {
 
   // 1. Fetch Dynamic Business Logic from DB
   const [settingsRes, zonesRes, taxesRes] = await Promise.all([
-    supabase.from('store_settings').select('*').single(),
-    supabase.from('delivery_zones').select('*').eq('is_active', true).order('name'),
-    supabase.from('taxes').select('*').eq('is_active', true).order('priority'),
+    supabase.from('store_settings_perfume_store').select('*').single(),
+    supabase.from('delivery_zones_perfume_store').select('*').eq('is_active', true).order('name'),
+    supabase.from('taxes_perfume_store').select('*').eq('is_active', true).order('priority'),
   ]);
 
   return (

@@ -11,9 +11,9 @@ export default async function EditCampaignPage({ params }: PageProps) {
   const supabase = await createClient();
 
   const [campaignRes, productsRes, categoriesRes] = await Promise.all([
-    supabase.from('marketing_campaigns').select('*').eq('id', id).single(),
-    supabase.from('products').select('id, title, slug').eq('is_featured', true),
-    supabase.from('categories').select('id, name, slug')
+    supabase.from('marketing_campaigns_perfume_store').select('*').eq('id', id).single(),
+    supabase.from('products_perfume_store').select('id, title, slug').eq('is_featured', true),
+    supabase.from('categories_perfume_store').select('id, name, slug')
   ]);
 
   if (campaignRes.error || !campaignRes.data) {

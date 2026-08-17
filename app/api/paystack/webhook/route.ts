@@ -29,23 +29,33 @@ export async function POST(req: Request) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
 
-      // 1. Update Status
-      const { error } = await supabaseAdmin
-        .from('orders')
+      // 1. Update Status — only "pending" -> "paid" transitions trigger notifications.
+      //    This makes the webhook idempotent: if the verify route (dev fallback)
+      //    already confirmed this order, we skip so the customer isn't notified twice.
+      const { data: updatedOrders, error } = await supabaseAdmin
+        .from('orders_perfume_store')
         .update({ 
           payment_status: 'paid',
           notes: `Paystack Ref: ${event.data.reference}`
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .eq('payment_status', 'pending')
+        .select('id');
 
       if (error) {
         console.error('Database Update Failed:', error);
         return NextResponse.json({ error: 'DB Update Failed' }, { status: 500 });
       }
 
+      // If no row was updated, the order was already confirmed -> skip notifications.
+      if (!updatedOrders || updatedOrders.length === 0) {
+        console.log(`[Webhook] Order ${orderId} already confirmed. Skipping duplicate notifications.`);
+        return NextResponse.json({ received: true });
+      }
+
       // 2. Fetch Full Order Details + Items for Invoice
       const { data: fullOrder } = await supabaseAdmin
-        .from('orders')
+        .from('orders_perfume_store')
         .select(`
           order_number, 
           user_phone, 
@@ -54,7 +64,7 @@ export async function POST(req: Request) {
           tax_amount,
           delivery_fee,
           notes,
-          items:order_items(*)
+          items:order_items_perfume_store(*)
         `)
         .eq('id', orderId)
         .single();
