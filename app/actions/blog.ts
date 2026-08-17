@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getCurrentTables } from '@/lib/stores/context';
 
 // Helper for Slug Generation
 function generateSlug(title: string) {
@@ -15,6 +16,7 @@ function generateSlug(title: string) {
 
 export async function createPost(formData: FormData) {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
@@ -28,7 +30,7 @@ export async function createPost(formData: FormData) {
     // Auto-generate slug (add random string to avoid collision)
     const slug = `${generateSlug(title)}-${Date.now().toString().slice(-4)}`;
 
-    const { error } = await supabase.from('posts_perfume_store').insert({
+    const { error } = await supabase.from(t.posts).insert({
       title,
       slug,
       content,
@@ -50,6 +52,7 @@ export async function createPost(formData: FormData) {
 
 export async function updatePost(id: string, formData: FormData) {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
@@ -61,7 +64,7 @@ export async function updatePost(id: string, formData: FormData) {
     const is_published = formData.get('is_published') === 'true';
     // We don't update slug to preserve SEO
 
-    const { error } = await supabase.from('posts_perfume_store').update({
+    const { error } = await supabase.from(t.posts).update({
       title,
       content,
       excerpt,
@@ -82,12 +85,13 @@ export async function updatePost(id: string, formData: FormData) {
 
 export async function deletePost(id: string) {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
   // 1. Get the post to find the image URL
   const { data: post } = await supabase
-    .from('posts_perfume_store')
+    .from(t.posts)
     .select('cover_image_url')
     .eq('id', id)
     .single();
@@ -105,7 +109,7 @@ export async function deletePost(id: string) {
   }
 
   // 3. Delete the Post Row
-  const { error } = await supabase.from('posts_perfume_store').delete().eq('id', id);
+  const { error } = await supabase.from(t.posts).delete().eq('id', id);
   if (error) return { error: error.message };
 
   revalidatePath('/blog');

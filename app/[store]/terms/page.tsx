@@ -6,7 +6,8 @@ export const metadata = {
   description: 'Rules and regulations for using our platform.',
 };
 
-export default function TermsPage() {
+export default async function TermsPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
   return (
     <div className="bg-secondary-50 min-h-screen py-12 md:py-20 px-4">
       {/* Document Container */}
@@ -66,7 +67,7 @@ export default function TermsPage() {
             <li>The bottle was broken or seal damaged <strong>upon arrival</strong>.</li>
           </ul>
           <p>
-            You must inspect your order immediately upon delivery. Once the rider leaves, we cannot accept returns for opened bottles or "change of mind". Please review our <Link href="/faq">FAQ</Link> for more details.
+            You must inspect your order immediately upon delivery. Once the rider leaves, we cannot accept returns for opened bottles or "change of mind". Please review our <Link href={`/${storeSlug}/faq`}>FAQ</Link> for more details.
           </p>
 
           <h3>6. Governing Law</h3>

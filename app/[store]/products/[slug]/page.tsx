@@ -9,7 +9,7 @@ import ProductCard from '@/components/shop/ProductCard';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; store: string }>;
 }
 
 // Dynamic Metadata for SEO/Sharing
@@ -51,7 +51,7 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function ProductDetailPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug, store: storeSlug } = await params;
 
   // 1. Fetch Main Data
   const product = await getProductBySlug(slug);
@@ -85,7 +85,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
         {/* Navigation & Breadcrumb */}
         <div className="flex items-center justify-between -mb-12">
           <Link
-            href={`/shop?category=${product.categories?.slug || ''}`}
+            href={`/${storeSlug}/shop?category=${product.categories?.slug || ''}`}
             className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brand-muted hover:text-brand-gold transition-colors group"
           >
             <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
@@ -117,7 +117,7 @@ export default async function ProductDetailPage({ params }: PageProps) {
                 <span className="text-brand-gold font-bold tracking-[0.3em] uppercase text-[10px]">Discovery</span>
                 <h2 className="text-3xl font-display font-bold text-brand-deep">Olfactive Relatives</h2>
               </div>
-              <Link href="/shop" className="text-xs font-bold uppercase tracking-widest text-brand-deep hover:text-brand-gold transition-colors underline underline-offset-8">
+              <Link href={`/${storeSlug}/shop`} className="text-xs font-bold uppercase tracking-widest text-brand-deep hover:text-brand-gold transition-colors underline underline-offset-8">
                 View Entire Collection
               </Link>
             </div>

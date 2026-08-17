@@ -16,9 +16,10 @@ interface Props {
   setSelectedZoneId: (id: string) => void;
   wantsDelivery: boolean;
   setWantsDelivery: (value: boolean) => void;
+  storeSlug?: string;
 }
 
-const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneId, wantsDelivery, setWantsDelivery }) => {
+const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneId, wantsDelivery, setWantsDelivery, storeSlug = 'derme' }) => {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,6 +74,7 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
         deliveryAddress: wantsDelivery ? formData.address : '',
         paymentMethod: paymentMethod,
         notes: `${formData.firstName} ${formData.lastName || ''} - ${formData.notes}`,
+        storeSlug: storeSlug,
       });
 
       if (result.error) {
@@ -90,7 +92,8 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
             email: formData.email || 'guest@liquorshop.gh',
             amount: result.finalTotal, 
             orderId: result.orderId,
-            phone: formData.phone
+            phone: formData.phone,
+            storeSlug: storeSlug
           }),
         });
 
@@ -102,7 +105,7 @@ const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneI
       } else {
         // Manual MoMo or Pay Later
         clearCart();
-        router.push(`/checkout/success/${result.orderId}`);
+        router.push(`/${storeSlug}/checkout/success/${result.orderId}`);
       }
     } catch (error: any) {
       alert(`Error: ${error.message}`);

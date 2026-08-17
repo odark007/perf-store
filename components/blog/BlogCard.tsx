@@ -1,6 +1,9 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useParams } from 'next/navigation';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { BlogPost } from '@/lib/types';
 
@@ -9,6 +12,8 @@ interface Props {
 }
 
 const BlogCard: React.FC<Props> = ({ post }) => {
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
   const date = new Date(post.published_at).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',
@@ -16,7 +21,7 @@ const BlogCard: React.FC<Props> = ({ post }) => {
   });
 
   return (
-    <Link href={`/blog/${post.slug}`} className="group block h-full">
+    <Link href={`/${storeSlug}/blog/${post.slug}`} className="group block h-full">
       <article className="h-full flex flex-col bg-white rounded-2xl overflow-hidden border border-secondary-100 shadow-sm hover:shadow-md transition-all duration-300">
         {/* Image */}
         <div className="relative aspect-[16/10] bg-secondary-100 overflow-hidden">

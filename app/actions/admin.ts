@@ -2,15 +2,17 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getCurrentTables } from '@/lib/stores/context';
 
 // Helper: Check if Super Admin
 async function checkSuperAdmin() {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Unauthorized');
 
   const { data: profile } = await supabase
-    .from('profiles_perfume_store')
+    .from(t.profiles)
     .select('role')
     .eq('id', user.id)
     .single();
@@ -18,19 +20,19 @@ async function checkSuperAdmin() {
   if (profile?.role !== 'super_admin') {
     throw new Error('Permission Denied: Super Admin only');
   }
-  return supabase;
+  return { supabase, t };
 }
 
 export async function createCategory(formData: FormData) {
   try {
-    const supabase = await checkSuperAdmin();
+    const { supabase, t } = await checkSuperAdmin();
     const name = formData.get('name') as string;
     
     // Auto-generate slug (e.g., "Soft Drinks" -> "soft-drinks")
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
     const { error } = await supabase
-      .from('categories_perfume_store')
+      .from(t.categories)
       .insert({ name, slug });
 
     if (error) throw error;
@@ -43,11 +45,11 @@ export async function createCategory(formData: FormData) {
 
 export async function deleteCategory(categoryId: string) {
   try {
-    const supabase = await checkSuperAdmin();
+    const { supabase, t } = await checkSuperAdmin();
 
     // 1. Check for existing products
     const { count, error: countError } = await supabase
-      .from('products_perfume_store')
+      .from(t.products)
       .select('*', { count: 'exact', head: true })
       .eq('category_id', categoryId);
 
@@ -59,7 +61,7 @@ export async function deleteCategory(categoryId: string) {
 
     // 2. Delete
     const { error } = await supabase
-      .from('categories_perfume_store')
+      .from(t.categories)
       .delete()
       .eq('id', categoryId);
 
@@ -73,14 +75,14 @@ export async function deleteCategory(categoryId: string) {
 
 export async function updateCategory(id: string, formData: FormData) {
   try {
-    const supabase = await checkSuperAdmin();
+    const { supabase, t } = await checkSuperAdmin();
     const name = formData.get('name') as string;
     
     // Regenerate slug from new name
     const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '');
 
     const { error } = await supabase
-      .from('categories_perfume_store')
+      .from(t.categories)
       .update({ name, slug })
       .eq('id', id);
 

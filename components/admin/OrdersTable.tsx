@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { Order } from '@/lib/types';
@@ -11,6 +12,8 @@ interface OrdersTableProps {
 }
 
 const OrdersTable: React.FC<OrdersTableProps> = ({ orders }) => {
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
   
   const getPaymentBadge = (status: string) => {
     switch (status) {
@@ -78,7 +81,7 @@ const OrdersTable: React.FC<OrdersTableProps> = ({ orders }) => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <Link 
-                      href={`/admin/orders/${order.id}`}
+                      href={`/admin/${storeSlug}/orders/${order.id}`}
                       className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium text-xs uppercase tracking-wide"
                     >
                       <Eye size={16} />

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendNotification } from '@/lib/notification';
+import { getTables, getStoreOrNull } from '@/lib/stores/config';
 
 export async function POST(req: Request) {
   try {
@@ -23,7 +24,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Payment not successful' }, { status: 400 });
     }
 
-    const orderId = verifyData.data.metadata.order_id;
+    const orderId = verifyData.data.metadata?.order_id;
+    const storeSlug = verifyData.data.metadata?.store_slug || 'derme';
+
+    const store = getStoreOrNull(storeSlug);
+    if (!store) {
+      return NextResponse.json({ error: 'Invalid store' }, { status: 400 });
+    }
+
+    const t = getTables(storeSlug);
 
     // 2. Payment is Valid! Update DB (Admin Access)
     //    Only "pending" -> "paid" transitions trigger notifications.
@@ -35,8 +44,8 @@ export async function POST(req: Request) {
     );
 
     const { data: updatedOrders, error: updateError } = await supabaseAdmin
-      .from('orders_perfume_store')
-      .update({ payment_status: 'paid' })
+      .from(t.orders)
+      .update({ payment_status: 'paid', store_slug: storeSlug })
       .eq('id', orderId)
       .eq('payment_status', 'pending')
       .select('id');
@@ -46,11 +55,33 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
     }
 
+    // 2b. Insert a record into the payments table for this store.
+    const { error: payError } = await supabaseAdmin
+      .from(t.payments)
+      .insert({
+        order_id: orderId,
+        store_slug: storeSlug,
+        paystack_reference: reference,
+        amount: verifyData.data.amount || 0,
+        currency: verifyData.data.currency || store.currency,
+        channel: verifyData.data.channel || null,
+        payment_status: 'success',
+        gateway_response: verifyData.data.gateway_response || null,
+        customer_email: verifyData.data.customer?.email || null,
+        customer_phone: verifyData.data.customer?.phone || null,
+        raw_payload: verifyData.data,
+        paid_at: verifyData.data.paid_at ? new Date(verifyData.data.paid_at) : new Date(),
+      });
+
+    if (payError) {
+      console.error('Verify Payments Insert Error:', payError);
+    }
+
     // 3. Send notifications ONLY if this route performed the confirmation.
     //    This is the dev fallback path (Paystack webhooks can't reach localhost).
     if (updatedOrders && updatedOrders.length > 0) {
-      const { data: fullOrder } = await supabaseAdmin
-        .from('orders_perfume_store')
+      const { data: fullOrder } = await (supabaseAdmin as any)
+        .from(t.orders)
         .select(`
           order_number, 
           user_phone, 
@@ -59,7 +90,7 @@ export async function POST(req: Request) {
           tax_amount,
           delivery_fee,
           notes,
-          items:order_items_perfume_store(*)
+          items:${t.orderItems}(*)
         `)
         .eq('id', orderId)
         .single();
@@ -83,8 +114,8 @@ export async function POST(req: Request) {
         console.log(`[Verify] Payment confirmed for Order #${fullOrder.order_number} (dev fallback). Sending notifications.`);
 
         try {
-          await sendNotification('new_order_admin', notifyData);
-          await sendNotification('new_order_customer', notifyData);
+          await sendNotification('new_order_admin', notifyData, storeSlug);
+          await sendNotification('new_order_customer', notifyData, storeSlug);
         } catch (notifyErr) {
           console.error('[Verify] Notification Trigger Failed:', notifyErr);
         }
@@ -93,7 +124,7 @@ export async function POST(req: Request) {
       console.log(`[Verify] Order ${orderId} already confirmed (webhook handled it). Skipping duplicate notifications.`);
     }
 
-    return NextResponse.json({ success: true, orderId });
+    return NextResponse.json({ success: true, orderId, store: storeSlug });
 
   } catch (error) {
     console.error('Verify API Error:', error);

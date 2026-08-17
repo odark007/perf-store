@@ -2,18 +2,20 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getCurrentTables } from '@/lib/stores/context';
 
 // Helper to check Admin
 async function checkAdmin() {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Unauthorized');
-  return supabase;
+  return { supabase, t };
 }
 
 export async function createCampaign(formData: FormData) {
   try {
-    const supabase = await checkAdmin();
+    const { supabase, t } = await checkAdmin();
 
     const data = {
       title: formData.get('title') as string,
@@ -27,7 +29,7 @@ export async function createCampaign(formData: FormData) {
       is_active: formData.get('is_active') === 'true',
     };
 
-    const { error } = await supabase.from('marketing_campaigns_perfume_store').insert(data);
+    const { error } = await supabase.from(t.campaigns).insert(data);
     if (error) throw error;
 
     revalidatePath('/');
@@ -40,11 +42,11 @@ export async function createCampaign(formData: FormData) {
 
 export async function deleteCampaign(id: string) {
   try {
-    const supabase = await checkAdmin();
+    const { supabase, t } = await checkAdmin();
 
     // 1. Get Campaign to check for Image
     const { data: campaign } = await supabase
-      .from('marketing_campaigns_perfume_store')
+      .from(t.campaigns)
       .select('media_url, media_type')
       .eq('id', id)
       .single();
@@ -62,7 +64,7 @@ export async function deleteCampaign(id: string) {
     }
 
     // 3. Delete DB Row
-    const { error } = await supabase.from('marketing_campaigns_perfume_store').delete().eq('id', id);
+    const { error } = await supabase.from(t.campaigns).delete().eq('id', id);
     if (error) throw error;
 
     revalidatePath('/');
@@ -75,8 +77,8 @@ export async function deleteCampaign(id: string) {
 
 export async function toggleCampaignStatus(id: string, currentStatus: boolean) {
   try {
-    const supabase = await checkAdmin();
-    await supabase.from('marketing_campaigns_perfume_store').update({ is_active: !currentStatus }).eq('id', id);
+    const { supabase, t } = await checkAdmin();
+    await supabase.from(t.campaigns).update({ is_active: !currentStatus }).eq('id', id);
     revalidatePath('/admin/marketing');
     revalidatePath('/');
     return { success: true };
@@ -88,14 +90,14 @@ export async function toggleCampaignStatus(id: string, currentStatus: boolean) {
 
 export async function updateCampaign(id: string, formData: FormData) {
   try {
-    const supabase = await checkAdmin();
+    const { supabase, t } = await checkAdmin();
 
     const media_type = formData.get('media_type') as 'image' | 'youtube';
     const media_url = formData.get('media_url') as string;
 
     // 1. Ghost File Cleanup logic
     const { data: oldCampaign } = await supabase
-      .from('marketing_campaigns_perfume_store')
+      .from(t.campaigns)
       .select('media_url, media_type')
       .eq('id', id)
       .single();
@@ -126,7 +128,7 @@ export async function updateCampaign(id: string, formData: FormData) {
 
     // 3. Update DB
     const { error } = await supabase
-      .from('marketing_campaigns_perfume_store')
+      .from(t.campaigns)
       .update(data)
       .eq('id', id);
 

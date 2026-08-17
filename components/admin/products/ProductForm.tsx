@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Save, Plus, Trash2, ArrowLeft, Calendar, Percent, Droplets, Wind, Star, Info } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/admin/input/ImageUpload';
@@ -24,6 +24,8 @@ const GENDER_OPTS = [
 
 const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) => {
   const router = useRouter();
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
 
@@ -161,7 +163,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
       alert(res.error);
     } else {
       alert(isEditMode ? "Fragrance Updated!" : "Fragrance Created!");
-      router.push('/admin/products');
+      router.push(`/admin/${storeSlug}/products`);
       router.refresh();
     }
   };

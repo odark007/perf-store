@@ -3,33 +3,35 @@ import Link from 'next/link';
 import { CheckCircle, MessageCircle, Home } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import PurchaseTracker from '@/components/checkout/PurchaseTracker';
 
 // Next.js 15: Params are a Promise
 interface SuccessPageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; store: string }>;
 }
 
 export default async function SuccessPage({ params }: SuccessPageProps) {
   // Await the params before accessing properties
   const resolvedParams = await params;
-  const { id } = resolvedParams;
+  const { id, store: storeSlug } = resolvedParams;
+  const t = getTables(storeSlug);
 
   const supabase = await createClient();
 
   // Fetch minimal order details
   const { data: order, error } = await supabase
-    .from('orders_perfume_store')
-    .select('id, order_number, total_amount, payment_method, tax_amount, delivery_fee, items:order_items_perfume_store(*)')
+    .from(t.orders)
+    .select(`id, order_number, total_amount, payment_method, tax_amount, delivery_fee, items:${t.orderItems}(*)`)
     .eq('id', id)
-    .single();
+    .single() as any;
 
   if (error || !order) {
     return (
       <div className="container-custom py-24 text-center">
         <h2 className="text-xl font-bold text-red-600">Order not found</h2>
         <p className="text-secondary-500 mb-6">The order ID might be invalid or there was a system error.</p>
-        <Link href="/shop">
+        <Link href={`/${storeSlug}/shop`}>
           <Button variant="outline">Return to Shop</Button>
         </Link>
       </div>
@@ -86,7 +88,7 @@ export default async function SuccessPage({ params }: SuccessPageProps) {
         )}
 
         <div className="flex justify-center">
-          <Link href="/shop">
+          <Link href={`/${storeSlug}/shop`}>
             <Button variant="outline" leftIcon={<Home size={18} />}>
               Continue Shopping
             </Button>

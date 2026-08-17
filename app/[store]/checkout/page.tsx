@@ -1,18 +1,21 @@
 import React from 'react';
 import { Lock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import CheckoutClientWrapper from '@/components/checkout/CheckoutClientWrapper';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CheckoutPage() {
+export default async function CheckoutPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   // 1. Fetch Dynamic Business Logic from DB
   const [settingsRes, zonesRes, taxesRes] = await Promise.all([
-    supabase.from('store_settings_perfume_store').select('*').single(),
-    supabase.from('delivery_zones_perfume_store').select('*').eq('is_active', true).order('name'),
-    supabase.from('taxes_perfume_store').select('*').eq('is_active', true).order('priority'),
+    supabase.from(t.storeSettings).select('*').single(),
+    supabase.from(t.deliveryZones).select('*').eq('is_active', true).order('name'),
+    supabase.from(t.taxes).select('*').eq('is_active', true).order('priority'),
   ]);
 
   return (
@@ -30,6 +33,7 @@ export default async function CheckoutPage() {
         settings={settingsRes.data || {}} 
         zones={zonesRes.data || []} 
         taxes={taxesRes.data || []} 
+        storeSlug={storeSlug}
       />
     </div>
   );

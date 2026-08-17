@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { STORES, STORE_COOKIE } from '@/lib/stores/config';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -7,6 +8,20 @@ export async function middleware(request: NextRequest) {
       headers: request.headers,
     },
   });
+
+  // Detect store slug from the URL pathname: /<store>/... or /admin/<store>/...
+  const segments = request.nextUrl.pathname.split('/').filter(Boolean);
+  const storeSlug =
+    (segments[0] && STORES[segments[0]] && segments[0]) ||
+    (segments[0] === 'admin' && segments[1] && STORES[segments[1]] ? segments[1] : null);
+
+  if (storeSlug) {
+    response.cookies.set(STORE_COOKIE, storeSlug, {
+      path: '/',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,16 +57,15 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Optional: Check if user actually has an admin profile in DB
-    // (This requires a DB call, might slow down middleware slightly, 
-    // usually we rely on the fact that only admins have accounts in this specific app)
+    // Logged in on the bare /admin (store chooser) → allow through.
+    // Logged in on /admin/<store>/... → allow through (store scope validated in page).
   }
 
   // 2. Protect Auth Pages (Don't show login if already logged in)
   if (request.nextUrl.pathname.startsWith('/auth/login')) {
     if (user) {
       const url = request.nextUrl.clone();
-      url.pathname = '/admin/dashboard';
+      url.pathname = '/admin';
       return NextResponse.redirect(url);
     }
   }
@@ -67,7 +81,6 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - api/ (API routes - handled separately or protected inside the route)
-     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { CartItem } from '@/lib/types';
 import { getDiscountedPrice, formatPhoneForGH } from '@/lib/utils'; // Fixed: Consolidated imports
 import { sendNotification } from '@/lib/notification';
+import { getCurrentStore, getCurrentTables } from '@/lib/stores/context';
 
 interface OrderPayload {
   items: CartItem[];
@@ -13,10 +14,13 @@ interface OrderPayload {
   deliveryAddress: string;
   paymentMethod: string;
   notes: string;
+  storeSlug?: string;
 }
 
 export async function placeOrder(payload: OrderPayload) {
   const supabase = await createClient();
+  const t = await getCurrentTables();
+  const store = await getCurrentStore();
 
   // 1. Get Current User
   const { data: { user } } = await supabase.auth.getUser();
@@ -25,15 +29,15 @@ export async function placeOrder(payload: OrderPayload) {
     // 2. FETCH DATA (Inventory + Pricing Validation)
     const variantIds = payload.items.map(i => i.variantId);
 
-    const { data: dbVariants, error: varError } = await supabase
-      .from('product_variants_perfume_store')
+    const { data: dbVariants, error: varError } = await (supabase as any)
+      .from(t.productVariants)
       .select(`
         id, 
         stock_deduction, 
         master_stock_id, 
         price, 
-        inventory:inventory_master_perfume_store(id, current_stock_level),
-        product:products_perfume_store(
+        inventory:${t.inventory}(id, current_stock_level),
+        product:${t.products}(
           is_featured,
           discount_percent,
           discount_start_at,
@@ -52,7 +56,7 @@ export async function placeOrder(payload: OrderPayload) {
     const secureOrderItems = [];
 
     for (const item of payload.items) {
-      const dbVariant = dbVariants.find(v => v.id === item.variantId);
+      const dbVariant = dbVariants.find((v: any) => v.id === item.variantId);
       if (!dbVariant) throw new Error(`Product variant not found: ${item.title}`);
 
       // A. Stock Math
@@ -94,7 +98,7 @@ export async function placeOrder(payload: OrderPayload) {
 
       // Deduct
       await supabase
-        .from('inventory_master_perfume_store')
+        .from(t.inventory)
         // @ts-ignore
         .update({ current_stock_level: inventory.current_stock_level - totalRequired })
         .eq('id', masterId);
@@ -102,12 +106,12 @@ export async function placeOrder(payload: OrderPayload) {
 
     // 5. CALCULATE FINAL TOTAL (Delivery + Tax)
     const zonePromise = payload.deliveryZoneId
-      ? supabase.from('delivery_zones_perfume_store').select('*').eq('id', payload.deliveryZoneId).single()
+      ? supabase.from(t.deliveryZones).select('*').eq('id', payload.deliveryZoneId).single()
       : Promise.resolve({ data: null });
 
     const [settingsRes, taxesRes, zoneRes] = await Promise.all([
-      supabase.from('store_settings_perfume_store').select('*').single(),
-      supabase.from('taxes_perfume_store').select('*').eq('is_active', true),
+      supabase.from(t.storeSettings).select('*').single(),
+      supabase.from(t.taxes).select('*').eq('is_active', true),
       zonePromise
     ]);
 
@@ -132,7 +136,7 @@ export async function placeOrder(payload: OrderPayload) {
 
     // 6. CREATE ORDER
     const { data: order, error: orderError } = await supabase
-      .from('orders_perfume_store')
+      .from(t.orders)
       .insert({
         user_id: user?.id || null,
         user_phone: formattedPhone,
@@ -145,7 +149,8 @@ export async function placeOrder(payload: OrderPayload) {
         payment_status: 'pending',
         delivery_status: 'processing',
         delivery_address: payload.deliveryAddress,
-        notes: payload.notes
+        notes: payload.notes,
+        store_slug: payload.storeSlug || store.slug
       })
       .select()
       .single();
@@ -158,7 +163,7 @@ export async function placeOrder(payload: OrderPayload) {
       ...item
     }));
 
-    await supabase.from('order_items_perfume_store').insert(itemsToInsert);
+    await supabase.from(t.orderItems).insert(itemsToInsert);
 
     // 8. NOTIFICATIONS
     // Logic:

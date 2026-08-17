@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 // NOTE: We removed 'createClient' import because we now call the API instead
@@ -9,6 +9,8 @@ import { Loader2 } from 'lucide-react';
 function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
   const orderId = searchParams.get('orderId');
   const reference = searchParams.get('reference'); // Paystack sends this
   const [status, setStatus] = useState('Verifying payment...');
@@ -30,7 +32,7 @@ function VerifyContent() {
 
         if (res.ok) {
           // Success: Redirect to success page
-          router.push(`/checkout/success/${orderId}`);
+          router.push(`/${storeSlug}/checkout/success/${orderId}`);
         } else {
           // Failure: Paystack said transaction failed
           setStatus('Payment verification failed. Please contact support.');
@@ -42,7 +44,7 @@ function VerifyContent() {
     };
 
     verifyPayment();
-  }, [orderId, reference, router]);
+  }, [orderId, reference, router, storeSlug]);
 
   return (
     <div className="container-custom py-32 text-center flex flex-col items-center">

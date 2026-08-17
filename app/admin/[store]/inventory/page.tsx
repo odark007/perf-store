@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import InventoryTable from '@/components/admin/inventory/InventoryTable';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
@@ -7,12 +8,14 @@ import { Tag, PlusCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function InventoryPage() {
+export default async function InventoryPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   // Fetch Inventory Master
   const { data: inventory, error } = await supabase
-    .from('inventory_master_perfume_store')
+    .from(t.inventory)
     .select('*')
     .order('product_name');
 

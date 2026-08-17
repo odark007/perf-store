@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Plus, Megaphone, Trash2, Calendar } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import DeleteCampaignButton from '@/components/admin/marketing/DeleteCampaignButton';
@@ -10,11 +11,13 @@ import { Edit2 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MarketingPage() {
+export default async function MarketingPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   const { data: campaigns } = await supabase
-    .from('marketing_campaigns_perfume_store')
+    .from(t.campaigns)
     .select('*')
     .order('created_at', { ascending: false });
 

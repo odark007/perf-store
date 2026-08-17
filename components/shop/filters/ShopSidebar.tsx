@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { X, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import FilterSection from './FilterSection';
@@ -25,6 +25,8 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
 
   // Local state for Price inputs
   const [minPrice, setMinPrice] = useState(searchParams.get('min') || '');
@@ -41,7 +43,7 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
     }
 
     params.set('page', '1'); // Reset pagination
-    router.push(`/shop?${params.toString()}`);
+    router.push(`/${storeSlug}/shop?${params.toString()}`);
   };
 
   const applyPrice = () => {
@@ -49,12 +51,12 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
     if (minPrice) params.set('min', minPrice); else params.delete('min');
     if (maxPrice) params.set('max', maxPrice); else params.delete('max');
     params.set('page', '1');
-    router.push(`/shop?${params.toString()}`);
+    router.push(`/${storeSlug}/shop?${params.toString()}`);
     if (window.innerWidth < 768) onClose();
   };
 
   const clearFilters = () => {
-    router.push('/shop');
+    router.push(`/${storeSlug}/shop`);
     setMinPrice('');
     setMaxPrice('');
     onClose();

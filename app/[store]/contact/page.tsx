@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import { Phone, Mail, MapPin, MessageCircle, Clock, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import Button from '@/components/ui/Button';
 
@@ -10,9 +11,11 @@ export const metadata = {
 
 export const revalidate = 60; // Refresh settings every minute
 
-export default async function ContactPage() {
+export default async function ContactPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
-  const { data: settings } = await supabase.from('store_settings_perfume_store').select('*').single();
+  const { data: settings } = await supabase.from(t.storeSettings).select('*').single();
 
   // Helper to clean phone for href="tel:..."
   const cleanPhone = (phone: string) => phone ? `+${phone.replace(/\D/g, '')}` : '#';

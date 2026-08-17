@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import { Shield, UserPlus, Lock } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -7,7 +8,9 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function UsersPage() {
+export default async function UsersPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   // 1. Get Current User & Role
@@ -16,7 +19,7 @@ export default async function UsersPage() {
   if (!user) return <div>Unauthorized</div>;
 
   const { data: currentUserProfile } = await supabase
-    .from('profiles_perfume_store')
+    .from(t.profiles)
     .select('role')
     .eq('id', user.id)
     .single();
@@ -38,7 +41,7 @@ export default async function UsersPage() {
 
   // 3. Fetch All Users (Only runs if passed the gate above)
   const { data: profiles, error } = await supabase
-    .from('profiles_perfume_store')
+    .from(t.profiles)
     .select('*')
     .order('created_at', { ascending: false });
 

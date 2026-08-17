@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Plus, Edit2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Pagination from '@/components/ui/Pagination';
@@ -12,11 +13,14 @@ import DeletePostButton from '@/components/admin/blog/DeletePostButton';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
+  params: Promise<{ store: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function AdminBlogPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function AdminBlogPage(props: PageProps) {
+  const { store: storeSlug } = await props.params;
+  const t = getTables(storeSlug);
+  const params = await props.searchParams;
   const supabase = await createClient();
 
   // 1. Parse Params
@@ -30,7 +34,7 @@ export default async function AdminBlogPage({ searchParams }: PageProps) {
 
   // 2. Build Query
   let query = supabase
-    .from('posts_perfume_store')
+    .from(t.posts)
     .select('*', { count: 'exact' });
 
   if (searchTerm) {

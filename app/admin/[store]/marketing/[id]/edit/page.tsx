@@ -1,19 +1,21 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import CampaignForm from '@/components/admin/marketing/CampaignForm';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; store: string }>;
 }
 
 export default async function EditCampaignPage({ params }: PageProps) {
-  const { id } = await params;
+  const { id, store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   const [campaignRes, productsRes, categoriesRes] = await Promise.all([
-    supabase.from('marketing_campaigns_perfume_store').select('*').eq('id', id).single(),
-    supabase.from('products_perfume_store').select('id, title, slug').eq('is_featured', true),
-    supabase.from('categories_perfume_store').select('id, name, slug')
+    supabase.from(t.campaigns).select('*').eq('id', id).single(),
+    supabase.from(t.products).select('id, title, slug').eq('is_featured', true),
+    supabase.from(t.categories).select('id, name, slug')
   ]);
 
   if (campaignRes.error || !campaignRes.data) {

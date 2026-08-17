@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import OrdersTable from '@/components/admin/OrdersTable';
 import OrdersToolbar from '@/components/admin/OrdersToolbar';
 import Pagination from '@/components/ui/Pagination';
@@ -8,11 +9,14 @@ import Pagination from '@/components/ui/Pagination';
 export const dynamic = 'force-dynamic';
 
 interface OrdersPageProps {
+  params: Promise<{ store: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function OrdersPage({ searchParams }: OrdersPageProps) {
-  const params = await searchParams;
+export default async function OrdersPage(props: OrdersPageProps) {
+  const { store: storeSlug } = await props.params;
+  const t = getTables(storeSlug);
+  const params = await props.searchParams;
   const supabase = await createClient();
 
   // 1. Parse Params
@@ -27,7 +31,7 @@ export default async function OrdersPage({ searchParams }: OrdersPageProps) {
 
   // 3. Build Query
   let query = supabase
-    .from('orders_perfume_store')
+    .from(t.orders)
     .select('*', { count: 'exact' });
 
   // Apply Search (Search by Phone Number)

@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import BlogCard from '@/components/blog/BlogCard';
 import BlogToolbar from '@/components/blog/BlogToolbar';
 import Pagination from '@/components/ui/Pagination';
@@ -13,11 +14,14 @@ export const metadata = {
 export const dynamic = 'force-dynamic'; // Ensure fresh search results
 
 interface PageProps {
+  params: Promise<{ store: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function BlogListingPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function BlogListingPage(props: PageProps) {
+  const { store: storeSlug } = await props.params;
+  const t = getTables(storeSlug);
+  const params = await props.searchParams;
   const supabase = await createClient();
 
   // 1. Parse Params
@@ -30,7 +34,7 @@ export default async function BlogListingPage({ searchParams }: PageProps) {
 
   // 2. Build Query
   let query = supabase
-    .from('posts_perfume_store')
+    .from(t.posts)
     .select('*', { count: 'exact' })
     .eq('is_published', true);
 

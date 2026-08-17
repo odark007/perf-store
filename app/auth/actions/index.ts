@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient as createAdminClient } from '@supabase/supabase-js'; // Renamed to avoid conflict
+import { getCurrentTables } from '@/lib/stores/context';
 
 // Helper to create client (Standard SSR Client for Cookies)
 const createSSRClient = async () => {
@@ -46,21 +47,22 @@ export async function loginAction(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
+    const t = await getCurrentTables();
     const { data: profile } = await supabase
-      .from('profiles_perfume_store')
+      .from(t.profiles)
       .select('role')
       .eq('id', user.id)
       .single();
 
     if (profile?.role === 'super_admin' || profile?.role === 'store_manager') {
-      redirect('/admin/dashboard');
+      redirect('/admin');
     } else {
       // It's a customer
-      redirect('/shop');
+      redirect('/derme/shop');
     }
   } else {
     // Fallback
-    redirect('/shop');
+    redirect('/derme/shop');
   }
 }
 
@@ -90,12 +92,13 @@ export async function signOutAction() {
 export async function createUserAction(formData: FormData) {
   // 1. Check if current user is Super Admin
   const supabase = await createSSRClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { error: 'Unauthorized' };
 
   const { data: currentUserProfile } = await supabase
-    .from('profiles_perfume_store')
+    .from(t.profiles)
     .select('role')
     .eq('id', user.id)
     .single();
@@ -127,7 +130,7 @@ export async function createUserAction(formData: FormData) {
 
   // 4. Update the profile role
   const { error: profileError } = await supabaseAdmin
-    .from('profiles_perfume_store')
+    .from(t.profiles)
     .update({ role })
     .eq('id', newUser.user.id);
 

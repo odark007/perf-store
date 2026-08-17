@@ -1,21 +1,23 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentTables } from '@/lib/stores/context';
 
 export async function getDashboardStats() {
   const supabase = await createClient();
+  const t = await getCurrentTables();
 
   try {
     // 1. Get Orders Data
     const { data: orders, error: orderError } = await supabase
-      .from('orders_perfume_store')
+      .from(t.orders)
       .select('total_amount, payment_status, delivery_status');
 
     if (orderError) throw orderError;
 
     // 2. Get Inventory Data
     const { data: inventory, error: invError } = await supabase
-      .from('inventory_master_perfume_store')
+      .from(t.inventory)
       .select('current_stock_level, low_stock_threshold');
 
     if (invError) throw invError;

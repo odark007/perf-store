@@ -2,30 +2,32 @@ import React from 'react';
 import Link from 'next/link';
 import { ArrowLeft, User, MapPin, Phone, Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import OrderActions from '@/components/admin/OrderActions';
 import Badge from '@/components/ui/Badge';
 import CopyableText from '@/components/ui/CopyableText';
 
 // Next.js 15 Params
 interface PageProps {
-    params: Promise<{ id: string }>;
+    params: Promise<{ id: string; store: string }>;
 }
 
 export const dynamic = 'force-dynamic';
 
 export default async function OrderDetailPage({ params }: PageProps) {
-    const { id } = await params;
+    const { id, store: storeSlug } = await params;
+    const t = getTables(storeSlug);
     const supabase = await createClient();
 
     // 1. Fetch Order + Items
     const { data: order, error } = await supabase
-        .from('orders_perfume_store')
+        .from(t.orders)
         .select(`
       *,
-      items:order_items_perfume_store(*)
+      items:${t.orderItems}(*)
     `)
         .eq('id', id)
-        .single();
+        .single() as any;
 
     if (error || !order) {
         return <div className="p-8">Order not found</div>;

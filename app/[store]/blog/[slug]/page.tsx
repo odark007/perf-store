@@ -4,15 +4,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 
 interface PageProps {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; store: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug, store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
-  const { data: post } = await supabase.from('posts_perfume_store').select('*').eq('slug', slug).single();
+  const { data: post } = await supabase.from(t.posts).select('*').eq('slug', slug).single();
 
   if (!post) return { title: 'Not Found' };
 
@@ -26,11 +28,12 @@ export async function generateMetadata({ params }: PageProps) {
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug, store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   const { data: post } = await supabase
-    .from('posts_perfume_store')
+    .from(t.posts)
     .select('*')
     .eq('slug', slug)
     .eq('is_published', true)
@@ -53,7 +56,7 @@ export default async function BlogPostPage({ params }: PageProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
         
         <div className="absolute bottom-0 left-0 w-full p-6 md:p-12 text-white container-custom">
-           <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-secondary-200 hover:text-white mb-6 transition-colors">
+           <Link href={`/${storeSlug}/blog`} className="inline-flex items-center gap-2 text-sm text-secondary-200 hover:text-white mb-6 transition-colors">
              <ArrowLeft size={16} /> Back to Blog
            </Link>
            <h1 className="text-3xl md:text-5xl font-display font-bold max-w-4xl leading-tight mb-4">

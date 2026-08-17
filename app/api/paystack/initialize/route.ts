@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getStoreOrNull } from '@/lib/stores/config';
 
 export async function POST(req: Request) {
 
@@ -7,10 +8,15 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { email, amount, orderId, phone } = body;
+        const { email, amount, orderId, phone, storeSlug } = body;
 
         if (!email || !amount || !orderId) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        const store = storeSlug ? getStoreOrNull(storeSlug) : null;
+        if (storeSlug && !store) {
+            return NextResponse.json({ error: 'Invalid store' }, { status: 400 });
         }
 
         // Paystack expects amount in Kobos/Pesewas (multiply by 100)
@@ -22,19 +28,27 @@ export async function POST(req: Request) {
         const rawBaseUrl = process.env.PAYSTACK_CALLBACK_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
         const baseUrl = rawBaseUrl.replace(/\/+$/, '');
 
+        const storeSegment = storeSlug ? `/${storeSlug}` : '';
+
         const params = {
             email,
             amount: amountInKobo,
-            currency: 'GHS',
-            callback_url: `${baseUrl}/checkout/verify?orderId=${orderId}`,
+            currency: store?.currency || 'GHS',
+            callback_url: `${baseUrl}${storeSegment}/checkout/verify?orderId=${orderId}`,
             metadata: {
                 order_id: orderId,
+                store_slug: storeSlug || 'derme',
                 phone_number: phone,
                 custom_fields: [
                     {
                         display_name: "Order ID",
                         variable_name: "order_id",
                         value: orderId
+                    },
+                    {
+                        display_name: "Store",
+                        variable_name: "store_slug",
+                        value: storeSlug || 'derme'
                     },
                     {
                         display_name: "Phone Number",
@@ -61,7 +75,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: data.message }, { status: 400 });
         }
 
-        return NextResponse.json({ url: data.data.authorization_url, reference: data.data.reference, callback_url: `${baseUrl}/checkout/verify?orderId=${orderId}` });
+        return NextResponse.json({ url: data.data.authorization_url, reference: data.data.reference, callback_url: `${baseUrl}${storeSegment}/checkout/verify?orderId=${orderId}` });
 
     } catch (error: any) {
         console.error('Paystack Init Error:', error);

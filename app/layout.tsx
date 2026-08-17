@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Jost } from "next/font/google";
+import { Cormorant_Garamond, Jost, Outfit, Nunito } from "next/font/google";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import "./globals.css";
 
@@ -19,6 +19,18 @@ const jost = Jost({
   display: "swap",
 });
 
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-store-display",
+  display: "swap",
+});
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-store-body",
+  display: "swap",
+});
+
 // Determine Base URL for SEO
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
   ? (process.env.NEXT_PUBLIC_SITE_URL.startsWith('http')
@@ -28,8 +40,8 @@ const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl), // <--- Critical for Social Sharing
-  title: "The Perfume Store Ghana | Luxury Fragrances",
-  description: "Ghana's premier online destination for authentic luxury fragrances. Curating excellence since 2024.",
+  title: "Jarayel Technologies | Commerce Platform",
+  description: "Jarayelɔ — the Ga word meaning merchant or trader. A home for our family of online shops.",
 };
 
 export default function RootLayout({
@@ -38,7 +50,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${jost.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${cormorant.variable} ${jost.variable} ${outfit.variable} ${nunito.variable}`} suppressHydrationWarning>
       <body className="antialiased bg-brand-cream min-h-screen flex flex-col font-body" suppressHydrationWarning>
         {children}
       </body>

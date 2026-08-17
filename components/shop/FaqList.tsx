@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useParams } from 'next/navigation';
 import { Search, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import { faqData } from '@/lib/data/faqs';
 import Button from '@/components/ui/Button';
@@ -9,6 +10,8 @@ import Link from 'next/link';
 const FaqList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
 
   // Filter Logic
   const filteredFaqs = faqData.filter(faq => 
@@ -81,7 +84,7 @@ const FaqList = () => {
             <p className="text-secondary-500 mb-6">
               We couldn't find an answer matching "{searchTerm}".
             </p>
-            <Link href="/contact">
+            <Link href={`/${storeSlug}/contact`}>
               <Button variant="outline" leftIcon={<MessageCircle size={18} />}>
                 Contact Support
               </Button>

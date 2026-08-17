@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Save, ArrowLeft, Image as ImageIcon, Youtube, Link as LinkIcon } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/admin/input/ImageUpload';
@@ -15,6 +15,8 @@ interface Props {
 
 const CampaignForm: React.FC<Props> = ({ initialData, featuredProducts, categories }) => {
   const router = useRouter();
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
   
@@ -68,7 +70,7 @@ const CampaignForm: React.FC<Props> = ({ initialData, featuredProducts, categori
       alert(res.error);
     } else {
       alert(isEditMode ? "Campaign Updated!" : "Campaign Created!");
-      router.push('/admin/marketing');
+      router.push(`/admin/${storeSlug}/marketing`);
     }
   }
 

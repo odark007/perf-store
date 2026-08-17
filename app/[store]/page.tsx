@@ -4,9 +4,11 @@ import Image from 'next/image';
 import { ArrowRight, ShieldCheck, Sparkles, MapPin, LayoutGrid, Heart, Search, Gift } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import ProductCard from '@/components/shop/ProductCard';
 import BlogCard from '@/components/blog/BlogCard';
 import CampaignCarousel from '@/components/shop/CampaignCarousel';
+import PlayTimeHome from '@/components/shop/PlayTimeHome';
 
 export const metadata = {
   title: 'The Perfume Store Ghana | Luxury Fragrances & Niche Scents',
@@ -20,28 +22,35 @@ export const metadata = {
 
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+
+  // Toy shop: render the dedicated RC-template-styled homepage
+  if (storeSlug === 'play-time') {
+    return <PlayTimeHome />;
+  }
+
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   const [featuredRes, blogRes, samplerRes, campaignRes] = await Promise.all([
     // A. Featured Products
     supabase
-      .from('products_perfume_store')
+      .from(t.products)
       .select(`
         *,
-        categories_perfume_store(name),
-        variants:product_variants_perfume_store(
+        ${t.categories}(name),
+        variants:${t.productVariants}(
           *,
-          inventory:inventory_master_perfume_store(current_stock_level)
+          inventory:${t.inventory}(current_stock_level)
         )
       `)
       .eq('is_featured', true)
-      .eq('is_active', true)
-      .limit(4),
+      .limit(4) as any,
 
     // B. Latest Blog Posts
     supabase
-      .from('posts_perfume_store')
+      .from(t.posts)
       .select('*')
       .eq('is_published', true)
       .order('published_at', { ascending: false })
@@ -49,22 +58,22 @@ export default async function HomePage() {
 
     // C. The Scent Discovery Pool
     supabase
-      .from('products_perfume_store')
+      .from(t.products)
       .select(`
         *,
-        categories_perfume_store(id, name),
-        variants:product_variants_perfume_store(
+        ${t.categories}(id, name),
+        variants:${t.productVariants}(
           *,
-          inventory:inventory_master_perfume_store(current_stock_level)
+          inventory:${t.inventory}(current_stock_level)
         )
       `)
       .eq('is_active', true)
       .order('created_at', { ascending: false })
-      .limit(20),
+      .limit(20) as any,
 
     // D. Campaigns
     supabase
-      .from('marketing_campaigns_perfume_store')
+      .from(t.campaigns)
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
@@ -93,7 +102,7 @@ export default async function HomePage() {
   const seenCategories = new Set();
 
   for (const product of stockProducts) {
-    if (featuredProducts.find(fp => fp.id === product.id)) continue;
+    if (featuredProducts.find((fp: any) => fp.id === product.id)) continue;
     if (!seenCategories.has(product.categories?.id)) {
       samplerProducts.push(product);
       seenCategories.add(product.categories?.id);
@@ -129,12 +138,12 @@ export default async function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
-              <Link href="/shop" className="w-full sm:w-auto">
+              <Link href={`/${storeSlug}/shop`} className="w-full sm:w-auto">
                 <Button size="xl" className="w-full bg-brand-gold text-brand-deep hover:bg-white hover:text-brand-deep border-none shadow-xl shadow-brand-gold/20">
                   Explore Collection
                 </Button>
               </Link>
-              <Link href="/about" className="w-full sm:w-auto">
+              <Link href={`/${storeSlug}/about`} className="w-full sm:w-auto">
                 <Button variant="outline" size="xl" className="w-full border-brand-gold/30 text-white hover:bg-brand-gold/10">
                   Our Philosophy
                 </Button>
@@ -165,7 +174,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Link href="/shop?category=mens" className="group relative h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-brand-border">
+            <Link href={`/${storeSlug}/shop?category=mens`} className="group relative h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-brand-border">
               <Image src="https://images.unsplash.com/photo-1523293182086-7651a899d37f?q=80&w=800&auto=format&fit=crop" alt="Mens" fill className="object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-deep via-brand-deep/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
               <div className="absolute bottom-10 left-10 text-white">
@@ -177,7 +186,7 @@ export default async function HomePage() {
               </div>
             </Link>
 
-            <Link href="/shop?category=womens" className="group relative h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-brand-border md:translate-y-[-20px]">
+            <Link href={`/${storeSlug}/shop?category=womens`} className="group relative h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-brand-border md:translate-y-[-20px]">
               <Image src="https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop" alt="Womens" fill className="object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-deep via-brand-deep/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
               <div className="absolute bottom-10 left-10 text-white">
@@ -189,7 +198,7 @@ export default async function HomePage() {
               </div>
             </Link>
 
-            <Link href="/shop?category=unisex" className="group relative h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-brand-border">
+            <Link href={`/${storeSlug}/shop?category=unisex`} className="group relative h-[450px] rounded-2xl overflow-hidden shadow-2xl border border-brand-border">
               <Image src="https://images.unsplash.com/photo-1615484477778-ca3b77940c25?q=80&w=800&auto=format&fit=crop" alt="Unisex" fill className="object-cover grayscale-[30%] group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110" />
               <div className="absolute inset-0 bg-gradient-to-t from-brand-deep via-brand-deep/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
               <div className="absolute bottom-10 left-10 text-white">
@@ -213,7 +222,7 @@ export default async function HomePage() {
                 <span className="text-brand-gold font-bold tracking-[0.3em] uppercase text-[10px]">The Masterpieces</span>
                 <h2 className="text-4xl font-display font-bold text-brand-deep">Iconic Selections</h2>
               </div>
-              <Link href="/shop" className="group flex items-center gap-3 text-brand-deep font-bold text-sm tracking-widest uppercase hover:text-brand-gold transition-colors">
+              <Link href={`/${storeSlug}/shop`} className="group flex items-center gap-3 text-brand-deep font-bold text-sm tracking-widest uppercase hover:text-brand-gold transition-colors">
                 View All Fragrances <div className="w-8 h-[1px] bg-brand-deep group-hover:bg-brand-gold transition-colors" />
               </Link>
             </div>
@@ -333,7 +342,7 @@ export default async function HomePage() {
             <p className="text-lg font-body leading-relaxed max-w-xl mx-auto lg:mx-0 font-medium">
               Make every occasion unforgettable with our luxury gift services. From corporate orders to private celebration favors, we provide premium wrapping and customized olfactive consultations.
             </p>
-            <Link href="/contact" className="inline-block">
+            <Link href={`/${storeSlug}/contact`} className="inline-block">
               <Button size="xl" className="bg-brand-deep text-white hover:bg-[#2d1554] border-none px-12 shadow-2xl">
                 Connect with Concierge
               </Button>
@@ -365,7 +374,7 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="text-center mt-16">
-            <Link href="/blog">
+            <Link href={`/${storeSlug}/blog`}>
               <Button variant="outline" className="px-12 border-brand-gold/30 text-brand-deep hover:bg-brand-gold/5 font-bold tracking-widest uppercase text-xs">
                 Enter The Journal
               </Button>

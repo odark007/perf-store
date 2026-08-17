@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Package, Clock, ChevronRight, Calendar } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
@@ -11,7 +12,9 @@ export const metadata = {
   title: 'My Orders | LiquorShop',
 };
 
-export default async function OrderHistoryPage() {
+export default async function OrderHistoryPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -20,13 +23,13 @@ export default async function OrderHistoryPage() {
   }
 
   const { data: orders } = await supabase
-    .from('orders_perfume_store')
+    .from(t.orders)
     .select(`
       *,
-      items:order_items_perfume_store(*)
+      items:${t.orderItems}(*)
     `)
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }) as { data: any[] | null };
 
   return (
     <div className="min-h-screen bg-secondary-50 py-12 md:py-20">
@@ -96,7 +99,7 @@ export default async function OrderHistoryPage() {
                     <p className="text-xl font-bold text-secondary-900 mb-4">
                       {formatCurrency(order.total_amount)}
                     </p>
-                    <Link href={`/checkout/success/${order.id}`}>
+                    <Link href={`/${storeSlug}/checkout/success/${order.id}`}>
                       <Button variant="outline" size="sm" rightIcon={<ChevronRight size={16} />}>
                         View Details
                       </Button>
@@ -114,7 +117,7 @@ export default async function OrderHistoryPage() {
             </div>
             <h3 className="text-lg font-bold text-secondary-900 mb-2">No orders yet</h3>
             <p className="text-secondary-500 mb-6">Looks like you haven't placed an order yet.</p>
-            <Link href="/shop">
+            <Link href={`/${storeSlug}/shop`}>
               <Button>Start Shopping</Button>
             </Link>
           </div>

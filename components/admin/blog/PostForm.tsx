@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Save, ArrowLeft } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/admin/input/ImageUpload';
@@ -14,6 +14,8 @@ interface Props {
 
 const PostForm: React.FC<Props> = ({ initialData }) => {
   const router = useRouter();
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
 
@@ -50,7 +52,7 @@ const PostForm: React.FC<Props> = ({ initialData }) => {
       alert(res.error);
     } else {
       alert(isEditMode ? "Post Updated" : "Post Created");
-      router.push('/admin/blog');
+      router.push(`/admin/${storeSlug}/blog`);
     }
   };
 

@@ -9,7 +9,11 @@ import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import { sendGAEvent } from '@/lib/analytics';
 
-const CartDrawer = () => {
+interface CartDrawerProps {
+  storeSlug?: string;
+}
+
+const CartDrawer = ({ storeSlug = 'derme' }: CartDrawerProps) => {
   // FIX: Select items directly for reactivity
   const {
     items,
@@ -161,7 +165,7 @@ const CartDrawer = () => {
                 Shipping & Taxes calculated at checkout
               </p>
               <Link
-                href="/checkout"
+                href={`/${storeSlug}/checkout`}
                 onClick={() => {
                   toggleCart();
                   // GA4 Track

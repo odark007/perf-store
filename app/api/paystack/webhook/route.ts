@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { sendNotification } from '@/lib/notification';
+import { getTables, getStoreOrNull } from '@/lib/stores/config';
 
 export async function POST(req: Request) {
   try {
@@ -21,8 +22,17 @@ export async function POST(req: Request) {
     const event = JSON.parse(bodyText);
 
     if (event.event === 'charge.success') {
-      const orderId = event.data.metadata.order_id;
-      console.log(`Payment success for Order: ${orderId}`);
+      const orderId = event.data.metadata?.order_id;
+      const storeSlug = event.data.metadata?.store_slug || 'derme';
+
+      const store = getStoreOrNull(storeSlug);
+      if (!store) {
+        console.error(`[Webhook] Unknown store: ${storeSlug}`);
+        return NextResponse.json({ received: true });
+      }
+
+      const t = getTables(storeSlug);
+      console.log(`[Webhook] Payment success for Order: ${orderId} (store: ${storeSlug})`);
 
       const supabaseAdmin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,9 +43,10 @@ export async function POST(req: Request) {
       //    This makes the webhook idempotent: if the verify route (dev fallback)
       //    already confirmed this order, we skip so the customer isn't notified twice.
       const { data: updatedOrders, error } = await supabaseAdmin
-        .from('orders_perfume_store')
+        .from(t.orders)
         .update({ 
           payment_status: 'paid',
+          store_slug: storeSlug,
           notes: `Paystack Ref: ${event.data.reference}`
         })
         .eq('id', orderId)
@@ -47,6 +58,28 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'DB Update Failed' }, { status: 500 });
       }
 
+      // 1b. Record the payment in the payments table.
+      const { error: payError } = await supabaseAdmin
+        .from(t.payments)
+        .insert({
+          order_id: orderId,
+          store_slug: storeSlug,
+          paystack_reference: event.data.reference,
+          amount: event.data.amount || 0,
+          currency: event.data.currency || store.currency,
+          channel: event.data.channel || null,
+          payment_status: 'success',
+          gateway_response: event.data.gateway_response || null,
+          customer_email: event.data.customer?.email || null,
+          customer_phone: event.data.customer?.phone || null,
+          raw_payload: event.data,
+          paid_at: event.data.paid_at ? new Date(event.data.paid_at) : new Date(),
+        });
+
+      if (payError) {
+        console.error('[Webhook] Payments Insert Error:', payError);
+      }
+
       // If no row was updated, the order was already confirmed -> skip notifications.
       if (!updatedOrders || updatedOrders.length === 0) {
         console.log(`[Webhook] Order ${orderId} already confirmed. Skipping duplicate notifications.`);
@@ -54,8 +87,8 @@ export async function POST(req: Request) {
       }
 
       // 2. Fetch Full Order Details + Items for Invoice
-      const { data: fullOrder } = await supabaseAdmin
-        .from('orders_perfume_store')
+      const { data: fullOrder } = await (supabaseAdmin as any)
+        .from(t.orders)
         .select(`
           order_number, 
           user_phone, 
@@ -64,7 +97,7 @@ export async function POST(req: Request) {
           tax_amount,
           delivery_fee,
           notes,
-          items:order_items_perfume_store(*)
+          items:${t.orderItems}(*)
         `)
         .eq('id', orderId)
         .single();
@@ -91,11 +124,8 @@ export async function POST(req: Request) {
         console.log(`[Webhook] Sending "New Order" Alerts for #${fullOrder.order_number}`);
         
         // Trigger Standard "New Order" Alerts (since they were skipped at checkout)
-        await sendNotification('new_order_admin', notifyData);
-        await sendNotification('new_order_customer', notifyData);
-        
-        // Optional: Also send 'payment_received' if you have a specific template for that, 
-        // but 'new_order_customer' usually serves as the confirmation receipt.
+        await sendNotification('new_order_admin', notifyData, storeSlug);
+        await sendNotification('new_order_customer', notifyData, storeSlug);
       }
     }
 

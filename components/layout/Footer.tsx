@@ -19,9 +19,10 @@ import { StoreSettings } from '@/lib/types';
 
 interface FooterProps {
   settings?: StoreSettings | null;
+  storeSlug?: string;
 }
 
-const Footer: React.FC<FooterProps> = ({ settings }) => {
+const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
   const currentYear = new Date().getFullYear();
 
   // Fallbacks if DB is empty
@@ -30,26 +31,26 @@ const Footer: React.FC<FooterProps> = ({ settings }) => {
 
   const footerLinks = {
     shop: [
-      { label: 'All Fragrances', href: '/shop' },
-      { label: "Men's Fragrances", href: '/shop?category=mens' },
-      { label: "Women's Fragrances", href: '/shop?category=womens' },
-      { label: 'Unisex & Niche', href: '/shop?category=unisex' },
-      { label: 'Gift Sets', href: '/shop?category=gift-sets' },
-      { label: 'Body Mists', href: '/shop?category=body-mists' },
+      { label: 'All Fragrances', href: `/${storeSlug}/shop` },
+      { label: "Men's Fragrances", href: `/${storeSlug}/shop?category=mens` },
+      { label: "Women's Fragrances", href: `/${storeSlug}/shop?category=womens` },
+      { label: 'Unisex & Niche', href: `/${storeSlug}/shop?category=unisex` },
+      { label: 'Gift Sets', href: `/${storeSlug}/shop?category=gift-sets` },
+      { label: 'Body Mists', href: `/${storeSlug}/shop?category=body-mists` },
     ],
     support: [
-      { label: 'Track Order', href: '/account/history' },
-      { label: 'Shipping Policy', href: '/shipping' },
-      { label: 'Returns & Exchanges', href: '/returns' },
-      { label: 'FAQ', href: '/faq' },
-      { label: 'Contact Us', href: '/contact' },
+      { label: 'Track Order', href: `/${storeSlug}/account/history` },
+      { label: 'Shipping Policy', href: `/${storeSlug}/shipping` },
+      { label: 'Returns & Exchanges', href: `/${storeSlug}/returns` },
+      { label: 'FAQ', href: `/${storeSlug}/faq` },
+      { label: 'Contact Us', href: `/${storeSlug}/contact` },
     ],
     company: [
-      { label: 'Our Story', href: '/about' },
-      { label: 'The Scent Journal', href: '/blog' },
-      { label: 'Authenticity Guarantee', href: '/authenticity' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Privacy Policy', href: '/privacy' },
+      { label: 'Our Story', href: `/${storeSlug}/about` },
+      { label: 'The Scent Journal', href: `/${storeSlug}/blog` },
+      { label: 'Authenticity Guarantee', href: `/${storeSlug}/authenticity` },
+      { label: 'Terms of Service', href: `/${storeSlug}/terms` },
+      { label: 'Privacy Policy', href: `/${storeSlug}/privacy` },
     ]
   };
 
@@ -103,7 +104,7 @@ const Footer: React.FC<FooterProps> = ({ settings }) => {
 
           {/* Brand Column */}
           <div className="lg:col-span-4 space-y-6">
-            <Link href="/" className="flex items-center gap-3 group justify-center lg:justify-start">
+            <Link href={`/${storeSlug}`} className="flex items-center gap-3 group justify-center lg:justify-start">
               <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#e8c97a] rounded-full flex items-center justify-center shadow-lg shadow-gold/20">
                 <span className="font-display font-bold text-[#1a0a2e] text-xl">P</span>
               </div>
@@ -179,9 +180,9 @@ const Footer: React.FC<FooterProps> = ({ settings }) => {
             © {currentYear} The Perfume Store Ghana. All Rights Reserved.
           </p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Privacy</Link>
-            <Link href="/terms" className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Terms</Link>
-            <Link href="/shipping" className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Shipping</Link>
+            <Link href={`/${storeSlug}/privacy`} className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Privacy</Link>
+            <Link href={`/${storeSlug}/terms`} className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Terms</Link>
+            <Link href={`/${storeSlug}/shipping`} className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Shipping</Link>
           </div>
           <div className="flex items-center gap-4">
             <CreditCard size={20} className="text-gold-pale/20" />

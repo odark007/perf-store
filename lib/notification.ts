@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { sendSMS } from '@/lib/sms';
 import { formatCurrency } from '@/lib/utils';
+import { getTables } from '@/lib/stores/config';
+import emailjs from '@emailjs/nodejs';
 
 // Helper to generate HTML Table for Email
 const generateInvoiceHTML = (items: any[], totals: { subtotal: number, tax: number, delivery: number, total: number }) => {
@@ -53,14 +55,15 @@ const generateInvoiceHTML = (items: any[], totals: { subtotal: number, tax: numb
 };
 
 // Main Notification Function
-export async function sendNotification(triggerId: string, orderData: any) {
+export async function sendNotification(triggerId: string, orderData: any, storeSlug?: string) {
   console.log(`[Notification] Triggered: ${triggerId} for Order: ${orderData.order_number}`);
 
   try {
     const supabase = await createClient();
+    const t = getTables(storeSlug || 'derme');
 
     // 1. Fetch Global Settings
-    const { data: settings, error: settingsError } = await supabase.from('store_settings_perfume_store').select('*').single();
+    const { data: settings, error: settingsError } = await supabase.from(t.storeSettings).select('*').single();
 
     if (settingsError || !settings) {
       console.error("[Notification] Failed to fetch settings:", settingsError);
@@ -69,7 +72,7 @@ export async function sendNotification(triggerId: string, orderData: any) {
 
     // 2. Fetch Template
     const { data: template, error: templateError } = await supabase
-      .from('notification_templates_perfume_store')
+      .from(t.notificationTemplates)
       .select('*')
       .eq('trigger_id', triggerId)
       .single();
@@ -143,7 +146,7 @@ export async function sendNotification(triggerId: string, orderData: any) {
       }
 
       if (settings.master_email_enabled && settings.admin_alert_email) {
-        await sendEmailJS(settings.admin_alert_email, emailSubject, emailBody);
+        await sendEmailJS(settings.admin_alert_email, emailSubject, emailBody, 'Admin');
       }
     }
 
@@ -164,7 +167,7 @@ export async function sendNotification(triggerId: string, orderData: any) {
       }
 
       if (settings.master_email_enabled && orderData.user_email) {
-        await sendEmailJS(orderData.user_email, emailSubject, emailBody);
+        await sendEmailJS(orderData.user_email, emailSubject, emailBody, validCustomerName);
       }
     }
 
@@ -173,45 +176,35 @@ export async function sendNotification(triggerId: string, orderData: any) {
   }
 }
 
-// Helper for EmailJS
-async function sendEmailJS(toEmail: string, subject: string, htmlBody: string) {
+// Helper for EmailJS (server-side via @emailjs/nodejs)
+async function sendEmailJS(toEmail: string, subject: string, htmlBody: string, toName?: string) {
   const serviceId = process.env.EMAILJS_SERVICE_ID;
   const templateId = process.env.EMAILJS_TEMPLATE_ID;
-  const userId = process.env.EMAILJS_USER_ID;
+  const publicKey = process.env.EMAILJS_PUBLIC_KEY;
   const privateKey = process.env.EMAILJS_PRIVATE_KEY;
 
-  if (!serviceId || !templateId || !userId || !privateKey) {
+  if (!serviceId || !templateId || !publicKey || !privateKey) {
     console.error("[Notification] Missing EmailJS env credentials.");
     return;
   }
 
   try {
-    const data = {
-      service_id: serviceId,
-      template_id: templateId,
-      user_id: userId,
-      accessToken: privateKey,
-      template_params: {
+    await emailjs.send(
+      serviceId,
+      templateId,
+      {
         to_email: toEmail,
+        to_name: toName || '',
         subject: subject,
-        message_html: htmlBody
+        message: htmlBody
+      },
+      {
+        publicKey,
+        privateKey,
       }
-    };
-
-    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-
-    if (!res.ok) {
-      const txt = await res.text();
-      console.error(`[Notification] EmailJS Error (${res.status}): ${txt}`);
-    } else {
-      console.log(`[Notification] Email Sent to ${toEmail}`);
-    }
-
-  } catch (error) {
-    console.error("[Notification] Email Send Failed", error);
+    );
+    console.log(`[Notification] Email Sent to ${toEmail}`);
+  } catch (error: any) {
+    console.error(`[Notification] EmailJS Error:`, error?.message || error);
   }
 }

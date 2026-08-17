@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link'; // Not strictly needed if using client modal, but good for structure
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import CategoryList from '@/components/admin/inventory/CategoryList';
 import CategoriesToolbar from '@/components/admin/inventory/CategoriesToolbar';
 import Pagination from '@/components/ui/Pagination';
@@ -8,11 +9,14 @@ import Pagination from '@/components/ui/Pagination';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
+  params: Promise<{ store: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function CategoriesPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function CategoriesPage(props: PageProps) {
+  const { store: storeSlug } = await props.params;
+  const t = getTables(storeSlug);
+  const params = await props.searchParams;
   const supabase = await createClient();
 
   // 1. Parse Params
@@ -25,7 +29,7 @@ export default async function CategoriesPage({ searchParams }: PageProps) {
 
   // 2. Build Query
   let query = supabase
-    .from('categories_perfume_store')
+    .from(t.categories)
     .select('*', { count: 'exact' });
 
   if (searchTerm) {

@@ -3,29 +3,41 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/shop/CartDrawer';
 import { createClient } from '@/lib/supabase/server';
+import { getStoreOrNull, getTables } from '@/lib/stores/config';
+import { notFound } from 'next/navigation';
 
-export default async function ShopLayout({
+export const dynamic = 'force-dynamic';
+
+export default async function StoreLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ store: string }>;
 }) {
+  const { store: storeSlug } = await params;
+  const store = getStoreOrNull(storeSlug);
+
+  if (!store) {
+    notFound();
+  }
+
   const supabase = await createClient();
 
-  // Fetch Store Settings for Footer/Contact info
+  // Fetch Store Settings for Footer/Contact info (dynamic table per store)
   const { data: settings } = await supabase
-    .from('store_settings_perfume_store')
+    .from(getTables(storeSlug).storeSettings)
     .select('*')
     .single();
 
   return (
     <>
-      <CartDrawer />
-      <Navbar />
+      <CartDrawer storeSlug={storeSlug} />
+      <Navbar storeSlug={storeSlug} />
       <main className="flex-1 pt-4 md:pt-8">
         {children}
       </main>
-      {/* Pass the fetched settings to the Footer */}
-      <Footer settings={settings} />
+      <Footer settings={settings} storeSlug={storeSlug} />
     </>
   );
 }

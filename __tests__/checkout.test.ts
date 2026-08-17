@@ -4,6 +4,95 @@ import { sendNotification } from '@/lib/notification';
 
 // --- MOCKS ---
 
+// 0. Mock the store context/config (multi-store registry)
+jest.mock('@/lib/stores/context', () => ({
+    getCurrentStoreSlug: jest.fn().mockResolvedValue('derme'),
+    getCurrentStore: jest.fn().mockResolvedValue({
+        slug: 'derme',
+        name: 'The Perfume Store Ghana',
+        tagline: 'Luxury Fragrances',
+        description: 'Test store',
+        tableSuffix: '_perfume_store',
+        bucketName: 'product-images-perfume-store',
+        currency: 'GHS',
+        currencyCode: 'GHS',
+        theme: {},
+    }),
+    getCurrentTables: jest.fn().mockResolvedValue({
+        categories: 'categories_perfume_store',
+        products: 'products_perfume_store',
+        productVariants: 'product_variants_perfume_store',
+        inventory: 'inventory_master_perfume_store',
+        orders: 'orders_perfume_store',
+        orderItems: 'order_items_perfume_store',
+        payments: 'payments_perfume_store',
+        storeSettings: 'store_settings_perfume_store',
+        deliveryZones: 'delivery_zones_perfume_store',
+        taxes: 'taxes_perfume_store',
+        notificationTemplates: 'notification_templates_perfume_store',
+        posts: 'posts_perfume_store',
+        campaigns: 'marketing_campaigns_perfume_store',
+        reviews: 'product_reviews_perfume_store',
+        smsLogs: 'sms_logs_perfume_store',
+        profiles: 'profiles_perfume_store',
+    }),
+}));
+
+jest.mock('@/lib/stores/config', () => ({
+    getStore: (slug: string) => ({
+        slug: slug || 'derme',
+        name: 'The Perfume Store Ghana',
+        tagline: 'Luxury Fragrances',
+        description: 'Test store',
+        tableSuffix: '_perfume_store',
+        bucketName: 'product-images-perfume-store',
+        currency: 'GHS',
+        currencyCode: 'GHS',
+        theme: {},
+    }),
+    getStoreOrNull: (slug: string) => slug ? ({
+        slug,
+        name: 'The Perfume Store Ghana',
+        tagline: 'Luxury Fragrances',
+        description: 'Test store',
+        tableSuffix: '_perfume_store',
+        bucketName: 'product-images-perfume-store',
+        currency: 'GHS',
+        currencyCode: 'GHS',
+        theme: {},
+    }) : null,
+    getTables: (slug: string) => ({
+        categories: 'categories_perfume_store',
+        products: 'products_perfume_store',
+        productVariants: 'product_variants_perfume_store',
+        inventory: 'inventory_master_perfume_store',
+        orders: 'orders_perfume_store',
+        orderItems: 'order_items_perfume_store',
+        payments: 'payments_perfume_store',
+        storeSettings: 'store_settings_perfume_store',
+        deliveryZones: 'delivery_zones_perfume_store',
+        taxes: 'taxes_perfume_store',
+        notificationTemplates: 'notification_templates_perfume_store',
+        posts: 'posts_perfume_store',
+        campaigns: 'marketing_campaigns_perfume_store',
+        reviews: 'product_reviews_perfume_store',
+        smsLogs: 'sms_logs_perfume_store',
+        profiles: 'profiles_perfume_store',
+    }),
+    STORES: {
+        derme: { slug: 'derme', tableSuffix: '_perfume_store' },
+        'play-time': { slug: 'play-time', tableSuffix: '_toy_shop' },
+    },
+    storeSlugs: ['derme', 'play-time'],
+    STORE_COOKIE: 'jarayel_store',
+}));
+
+jest.mock('next/headers', () => ({
+    cookies: jest.fn().mockResolvedValue({
+        get: jest.fn().mockReturnValue({ value: 'derme' }),
+    }),
+}));
+
 // 1. Mock Supabase Server Client (for checkout action)
 jest.mock('@/lib/supabase/server', () => ({
     createClient: jest.fn().mockReturnValue({
@@ -62,6 +151,7 @@ jest.mock('@supabase/supabase-js', () => ({
         from: jest.fn().mockReturnValue({
             update: jest.fn().mockReturnThis(),
             eq: jest.fn().mockReturnThis(),
+            insert: jest.fn().mockResolvedValue({ data: null, error: null }),
             // .select('id') resolves the update result (array of updated rows)
             select: jest.fn().mockImplementation((cols: string) =>
                 cols === 'id'
@@ -230,10 +320,10 @@ describe('Notification System Tests', () => {
         expect(castNotification).toHaveBeenCalledWith('new_order_admin', expect.objectContaining({
             order_number: 'ORD-webhook',
             total_amount: 500
-        }));
+        }), 'derme');
         expect(castNotification).toHaveBeenCalledWith('new_order_customer', expect.objectContaining({
             order_number: 'ORD-webhook',
             total_amount: 500
-        }));
+        }), 'derme');
     });
 });

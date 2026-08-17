@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -11,25 +11,41 @@ import {
   LogOut,
   Users,
   Tag,
-  BookOpen // For Blog
+  BookOpen, // For Blog
+  Megaphone,
+  Store,
+  ChevronDown
 } from 'lucide-react';
 import { signOutAction } from '@/app/auth/actions';
-import { Megaphone } from 'lucide-react';
 
 const AdminSidebar = () => {
   const pathname = usePathname();
+  const router = useRouter();
+
+  // Extract store slug from /admin/<store>/... (fallback: derme)
+  const segments = pathname.split('/').filter(Boolean);
+  const storeSlug = segments[0] === 'admin' && segments[1] ? segments[1] : 'derme';
 
   const links = [
-    { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Orders', href: '/admin/orders', icon: ShoppingBag },
-    { label: 'Inventory', href: '/admin/inventory', icon: Package },
-    { label: 'Categories', href: '/admin/inventory/categories', icon: Tag },
-    { label: 'Products', href: '/admin/products', icon: Package },
-    { label: 'Blog', href: '/admin/blog', icon: BookOpen },
-    { label: 'Marketing', href: '/admin/marketing', icon: Megaphone },
-    { label: 'Users', href: '/admin/users', icon: Users },
-    { label: 'Settings', href: '/admin/settings', icon: Settings },
+    { label: 'Dashboard', href: `/admin/${storeSlug}/dashboard`, icon: LayoutDashboard },
+    { label: 'Orders', href: `/admin/${storeSlug}/orders`, icon: ShoppingBag },
+    { label: 'Inventory', href: `/admin/${storeSlug}/inventory`, icon: Package },
+    { label: 'Categories', href: `/admin/${storeSlug}/inventory/categories`, icon: Tag },
+    { label: 'Products', href: `/admin/${storeSlug}/products`, icon: Package },
+    { label: 'Blog', href: `/admin/${storeSlug}/blog`, icon: BookOpen },
+    { label: 'Marketing', href: `/admin/${storeSlug}/marketing`, icon: Megaphone },
+    { label: 'Users', href: `/admin/${storeSlug}/users`, icon: Users },
+    { label: 'Settings', href: `/admin/${storeSlug}/settings`, icon: Settings },
   ];
+
+  const handleStoreSwitch = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const target = e.target.value;
+    if (target === 'portal') {
+      router.push('/admin');
+    } else if (target && target !== storeSlug) {
+      router.push(`/admin/${target}/dashboard`);
+    }
+  };
 
   return (
     // FIX 1: Changed min-h-screen to h-screen and removed overflow-y-auto from parent
@@ -38,7 +54,24 @@ const AdminSidebar = () => {
       {/* Header - Fixed at top */}
       <div className="p-6 border-b border-brand-border flex-shrink-0">
         <h2 className="text-xl font-display font-bold text-brand-deep">Admin Panel</h2>
-        <p className="text-xs text-brand-gold font-bold uppercase tracking-wider">Perfume Boutique</p>
+        <p className="text-xs text-brand-gold font-bold uppercase tracking-wider">Jarayel Technologies</p>
+      </div>
+
+      {/* Store Switcher */}
+      <div className="px-4 pt-4 flex-shrink-0">
+        <div className="relative">
+          <Store size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" />
+          <select
+            value={storeSlug}
+            onChange={handleStoreSwitch}
+            className="w-full appearance-none pl-9 pr-8 py-2.5 text-sm font-medium text-brand-deep bg-white border border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
+          >
+            <option value="portal">Switch Store...</option>
+            <option value="derme">The Perfume Store</option>
+            <option value="play-time">Play-Time</option>
+          </select>
+          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted" />
+        </div>
       </div>
 
       {/* Navigation - Takes remaining space and scrolls */}

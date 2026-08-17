@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getCurrentTables } from '@/lib/stores/context';
 
 interface VariantInput {
   id?: string;
@@ -54,6 +55,7 @@ function sanitizePromotion(input: ProductInput) {
 
 export async function createProduct(input: ProductInput) {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
@@ -62,7 +64,7 @@ export async function createProduct(input: ProductInput) {
 
     // 1. Inventory
     const { data: inventory, error: invError } = await supabase
-      .from('inventory_master_perfume_store')
+      .from(t.inventory)
       .insert({
         product_name: `${input.title} (Inventory)`,
         current_stock_level: input.initial_stock,
@@ -74,13 +76,13 @@ export async function createProduct(input: ProductInput) {
     if (invError) throw new Error(`Inventory Error: ${invError.message}`);
 
     // 2. Category Name
-    const { data: catData } = await supabase.from('categories_perfume_store').select('name').eq('id', input.category_id).single();
+    const { data: catData } = await supabase.from(t.categories).select('name').eq('id', input.category_id).single();
 
     // 3. Product
     const slug = input.title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Date.now().toString().slice(-4);
 
     const { data: product, error: prodError } = await supabase
-      .from('products_perfume_store')
+      .from(t.products)
       .insert({
         title: input.title,
         slug: slug,
@@ -120,7 +122,7 @@ export async function createProduct(input: ProductInput) {
       sku: v.sku || `${slug}-${v.type}-${Math.random().toString(36).substring(2, 7)}`
     }));
 
-    const { error: varError } = await supabase.from('product_variants_perfume_store').insert(variantsData);
+    const { error: varError } = await supabase.from(t.productVariants).insert(variantsData);
     if (varError) throw new Error(`Variant Error: ${varError.message}`);
 
     revalidatePath('/shop');
@@ -135,6 +137,7 @@ export async function createProduct(input: ProductInput) {
 
 export async function updateProduct(productId: string, input: Omit<ProductInput, 'initial_stock' | 'threshold'>) {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
@@ -143,7 +146,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     const promo = sanitizePromotion(input as ProductInput);
 
     const { data: existingVariants } = await supabase
-      .from('product_variants_perfume_store')
+      .from(t.productVariants)
       .select('id, master_stock_id')
       .eq('product_id', productId);
 
@@ -151,7 +154,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     if (!masterStockId) throw new Error("Critical: Could not find Inventory Link.");
 
     // Image Cleanup Logic...
-    const { data: oldProduct } = await supabase.from('products_perfume_store').select('base_image_url').eq('id', productId).single();
+    const { data: oldProduct } = await supabase.from(t.products).select('base_image_url').eq('id', productId).single();
     if (oldProduct && oldProduct.base_image_url !== input.base_image_url) {
       if (oldProduct.base_image_url.includes('product-images-perfume-store')) {
         const oldPath = oldProduct.base_image_url.split('/product-images/')[1];
@@ -160,9 +163,9 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     }
 
     // Update Product
-    const { data: catData } = await supabase.from('categories_perfume_store').select('name').eq('id', input.category_id).single();
+    const { data: catData } = await supabase.from(t.categories).select('name').eq('id', input.category_id).single();
 
-    await supabase.from('products_perfume_store').update({
+    await supabase.from(t.products).update({
       title: input.title,
       description: input.description,
       category: catData?.name || 'Uncategorized',
@@ -184,7 +187,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     }).eq('id', productId);
 
     // Update Inventory Name
-    await supabase.from('inventory_master_perfume_store').update({
+    await supabase.from(t.inventory).update({
       product_name: `${input.title} (Inventory)`
     }).eq('id', masterStockId);
 
@@ -195,13 +198,13 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     // Delete
     const toDelete = dbIds.filter(id => !inputIds.includes(id));
     if (toDelete.length > 0) {
-      await supabase.from('product_variants_perfume_store').delete().in('id', toDelete);
+      await supabase.from(t.productVariants).delete().in('id', toDelete);
     }
 
     // Update
     const toUpdate = input.variants.filter(v => v.id);
     for (const v of toUpdate) {
-      await supabase.from('product_variants_perfume_store').update({
+      await supabase.from(t.productVariants).update({
         name: v.name,
         type: v.type,
         price: v.price,
@@ -221,7 +224,7 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     }));
 
     if (toInsert.length > 0) {
-      await supabase.from('product_variants_perfume_store').insert(toInsert);
+      await supabase.from(t.productVariants).insert(toInsert);
     }
 
     revalidatePath('/shop');
@@ -238,22 +241,23 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
 
 export async function deleteProduct(productId: string) {
   const supabase = await createClient();
+  const t = await getCurrentTables();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
   const { data: variants } = await supabase
-    .from('product_variants_perfume_store')
+    .from(t.productVariants)
     .select('master_stock_id')
     .eq('product_id', productId)
     .limit(1);
 
   const inventoryId = variants?.[0]?.master_stock_id;
 
-  const { error } = await supabase.from('products_perfume_store').delete().eq('id', productId);
+  const { error } = await supabase.from(t.products).delete().eq('id', productId);
   if (error) return { error: error.message };
 
   if (inventoryId) {
-    await supabase.from('inventory_master_perfume_store').delete().eq('id', inventoryId);
+    await supabase.from(t.inventory).delete().eq('id', inventoryId);
   }
 
   revalidatePath('/admin/products');

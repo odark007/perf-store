@@ -18,7 +18,11 @@ import { useCartStore } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
-const Navbar = () => {
+interface NavbarProps {
+  storeSlug?: string;
+}
+
+const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
@@ -80,17 +84,17 @@ const Navbar = () => {
   const cartItemCount = isMounted ? items.reduce((total, item) => total + item.quantity, 0) : 0;
 
   const navLinks = [
-    { label: 'All Fragrances', href: '/shop' },
-    { label: "Men's", href: '/shop?category=mens' },
-    { label: "Women's", href: '/shop?category=womens' },
-    { label: 'Unisex & Niche', href: '/shop?category=unisex' },
-    { label: 'Gift Sets', href: '/shop?category=gift-sets' },
-    { label: 'Body Mists', href: '/shop?category=body-mists' },
+    { label: 'All Fragrances', href: `/${storeSlug}/shop` },
+    { label: "Men's", href: `/${storeSlug}/shop?category=mens` },
+    { label: "Women's", href: `/${storeSlug}/shop?category=womens` },
+    { label: 'Unisex & Niche', href: `/${storeSlug}/shop?category=unisex` },
+    { label: 'Gift Sets', href: `/${storeSlug}/shop?category=gift-sets` },
+    { label: 'Body Mists', href: `/${storeSlug}/shop?category=body-mists` },
   ];
 
   const isActive = (href: string) => {
-    if (href === '/shop') return pathname === '/shop' && !searchParams.get('category');
-    return pathname === '/shop' && searchParams.get('category') === href.split('category=')[1];
+    if (href === `/${storeSlug}/shop`) return pathname === `/${storeSlug}/shop` && !searchParams.get('category');
+    return pathname === `/${storeSlug}/shop` && searchParams.get('category') === href.split('category=')[1];
   };
 
   return (
@@ -98,7 +102,7 @@ const Navbar = () => {
       <div className="container-custom h-full flex items-center justify-between">
 
         {/* 1. Logo */}
-        <Link href="/" className="flex items-center gap-3 z-20 group">
+        <Link href={`/${storeSlug}`} className="flex items-center gap-3 z-20 group">
           <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#e8c97a] rounded-full flex items-center justify-center shadow-lg shadow-gold/20 transition-transform group-hover:scale-105">
             <span className="font-display font-bold text-[#1a0a2e] text-xl">P</span>
           </div>
@@ -130,7 +134,7 @@ const Navbar = () => {
         <div className="flex items-center gap-2 md:gap-3 z-20">
 
           {/* Wishlist Link */}
-          <Link href="/wishlist" className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors">
+          <Link href={`/${storeSlug}/wishlist`} className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors">
             <Heart size={22} />
           </Link>
 
@@ -164,7 +168,7 @@ const Navbar = () => {
 
                 <div className="py-2">
                   <Link
-                    href="/account/history"
+                    href={`/${storeSlug}/account/history`}
                     className="flex items-center gap-3 px-5 py-3 text-sm text-[#c4b8d4] hover:text-[#c9a84c] hover:bg-[#1a0a2e]/40 transition-all font-medium"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
@@ -245,7 +249,7 @@ const Navbar = () => {
                 <p className="text-[10px] text-gold-pale/50 font-bold uppercase tracking-widest mb-1">Welcome</p>
                 <p className="text-sm font-semibold text-white mb-4">{user.email}</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <Link href="/account/history" className="flex items-center justify-center gap-2 p-3 bg-[#1a0a2e] rounded-lg text-[#c4b8d4]" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link href={`/${storeSlug}/account/history`} className="flex items-center justify-center gap-2 p-3 bg-[#1a0a2e] rounded-lg text-[#c4b8d4]" onClick={() => setIsMobileMenuOpen(false)}>
                     <Clock size={16} /> <span className="text-[10px] font-bold uppercase">History</span>
                   </Link>
                   <button onClick={handleSignOut} className="flex items-center justify-center gap-2 p-3 bg-red-900/10 rounded-lg text-red-400">

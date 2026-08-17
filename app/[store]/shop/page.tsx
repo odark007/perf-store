@@ -1,15 +1,19 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import ShopLayoutClient from '@/components/shop/ShopLayoutClient';
 
 export const dynamic = 'force-dynamic';
 
 interface ShopPageProps {
+  params: Promise<{ store: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function ShopPage({ searchParams }: ShopPageProps) {
-  const params = await searchParams;
+export default async function ShopPage(props: ShopPageProps) {
+  const { store: storeSlug } = await props.params;
+  const t = getTables(storeSlug);
+  const params = await props.searchParams;
   const supabase = await createClient();
 
   // 1. Parse Filters
@@ -28,7 +32,7 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   if (categorySlug) {
     const { data: cat } = await supabase
-      .from('categories_perfume_store')
+      .from(t.categories)
       .select('id')
       .eq('slug', categorySlug)
       .single();
@@ -42,8 +46,8 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   // 3. Fetch Metadata (Categories, Brands, Concentration, Scent Family)
   const [categoriesRes, productsMetaRes] = await Promise.all([
-    supabase.from('categories_perfume_store').select('id, name, slug').order('name'),
-    supabase.from('products_perfume_store').select('brand, concentration, scent_family')
+    supabase.from(t.categories).select('id, name, slug').order('name'),
+    supabase.from(t.products).select('brand, concentration, scent_family')
   ]);
 
   const categories = categoriesRes.data || [];
@@ -55,12 +59,12 @@ export default async function ShopPage({ searchParams }: ShopPageProps) {
 
   // 4. Build Main Product Query
   let query = supabase
-    .from('products_perfume_store')
+    .from(t.products)
     .select(`
       *,
-      variants:product_variants_perfume_store!inner (
+      variants:${t.productVariants}!inner (
         *,
-        inventory:inventory_master_perfume_store (current_stock_level)
+        inventory:${t.inventory} (current_stock_level)
       )
     `);
 

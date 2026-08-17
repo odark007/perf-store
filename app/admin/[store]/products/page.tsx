@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Plus, Tag } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import Pagination from '@/components/ui/Pagination';
@@ -13,11 +14,14 @@ import { Edit2 } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
+  params: Promise<{ store: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function AdminProductsPage({ searchParams }: PageProps) {
-  const params = await searchParams;
+export default async function AdminProductsPage(props: PageProps) {
+  const { store: storeSlug } = await props.params;
+  const t = getTables(storeSlug);
+  const params = await props.searchParams;
   const supabase = await createClient();
 
   // 1. Parse Params
@@ -30,12 +34,12 @@ export default async function AdminProductsPage({ searchParams }: PageProps) {
   const to = from + limit - 1;
 
   // 2. Fetch Categories (For Toolbar)
-  const { data: categories } = await supabase.from('categories_perfume_store').select('id, name').order('name');
+  const { data: categories } = await supabase.from(t.categories).select('id, name').order('name');
 
   // 3. Build Query
   let query = supabase
-    .from('products_perfume_store')
-    .select('*, categories_perfume_store(name)', { count: 'exact' });
+    .from(t.products)
+    .select(`*, ${t.categories}(name)`, { count: 'exact' });
 
   if (searchTerm) {
     query = query.ilike('title', `%${searchTerm}%`);

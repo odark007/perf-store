@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import SmartImage from '@/components/ui/SmartImage';
 import { ShoppingCart, Heart, Sparkles, Minus, Plus } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -54,6 +55,8 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id || '');
   const [isHovered, setIsHovered] = useState(false);
   const [localQuantity, setLocalQuantity] = useState(1);
+  const params = useParams();
+  const storeSlug = (params?.store as string) || 'derme';
 
   // 1. Get Cart
   const cartItems = useCartStore((state) => state.items);
@@ -131,7 +134,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/products/${slug}`} className="block relative aspect-[4/5] overflow-hidden bg-brand-cream/30">
+      <Link href={`/${storeSlug}/products/${slug}`} className="block relative aspect-[4/5] overflow-hidden bg-brand-cream/30">
         <SmartImage
           src={image || 'https://placehold.co/600x800/png?text=No+Image'}
           alt={title}
@@ -190,7 +193,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
 
         {/* Title */}
         <div className="flex-1">
-          <Link href={`/products/${slug}`}>
+          <Link href={`/${storeSlug}/products/${slug}`}>
             <h3 className="text-sm md:text-base font-display font-semibold text-brand-deep line-clamp-1 group-hover:text-brand-gold transition-colors">
               {title}
             </h3>

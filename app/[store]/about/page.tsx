@@ -9,7 +9,8 @@ export const metadata = {
   description: 'Your premium destination for authentic wines, spirits, and beers in Accra.',
 };
 
-export default function AboutPage() {
+export default async function AboutPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
   return (
     <div className="bg-white">
       
@@ -129,7 +130,7 @@ export default function AboutPage() {
         <h2 className="text-3xl font-display font-bold text-secondary-900 mb-6">
           Ready to stock your cellar?
         </h2>
-        <Link href="/shop">
+        <Link href={`/${storeSlug}/shop`}>
           <Button size="lg" className="px-8 h-14 text-lg" rightIcon={<ArrowRight size={20} />}>
             Explore Our Collection
           </Button>

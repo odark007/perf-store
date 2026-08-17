@@ -8,9 +8,10 @@ interface Props {
   settings: any;
   zones: any[];
   taxes: any[];
+  storeSlug?: string;
 }
 
-const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes }) => {
+const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes, storeSlug = 'derme' }) => {
   // State to sync Form selection with Summary calculation
   const [selectedZoneId, setSelectedZoneId] = useState<string>('');
   const [wantsDelivery, setWantsDelivery] = useState(true);
@@ -28,6 +29,7 @@ const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes }) => {
            setSelectedZoneId={setSelectedZoneId}
            wantsDelivery={wantsDelivery}
            setWantsDelivery={setWantsDelivery}
+           storeSlug={storeSlug}
          />
       </div>
 

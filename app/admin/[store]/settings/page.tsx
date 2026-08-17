@@ -1,5 +1,6 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getTables } from '@/lib/stores/config';
 import GeneralSettings from '@/components/admin/settings/GeneralSettings';
 import DeliverySettings from '@/components/admin/settings/DeliverySettings';
 import TaxSettings from '@/components/admin/settings/TaxSettings';
@@ -7,16 +8,18 @@ import NotificationSettings from '@/components/admin/settings/NotificationSettin
 
 export const dynamic = 'force-dynamic';
 
-export default async function SettingsPage() {
+export default async function SettingsPage({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const t = getTables(storeSlug);
   const supabase = await createClient();
 
   // Fetch all settings data
   // FIX: Added 'templatesRes' to the variable list [ ... ]
   const [settingsRes, zonesRes, taxesRes, templatesRes] = await Promise.all([
-    supabase.from('store_settings_perfume_store').select('*').single(),
-    supabase.from('delivery_zones_perfume_store').select('*').order('name'),
-    supabase.from('taxes_perfume_store').select('*').order('priority'),
-    supabase.from('notification_templates_perfume_store').select('*').order('name'),
+    supabase.from(t.storeSettings).select('*').single(),
+    supabase.from(t.deliveryZones).select('*').order('name'),
+    supabase.from(t.taxes).select('*').order('priority'),
+    supabase.from(t.notificationTemplates).select('*').order('name'),
   ]);
 
   const settings = settingsRes.data || {};
