@@ -45,4 +45,31 @@ h6,
   .container-custom {
     @apply container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl;
   }
+
+  /* Portal landing page (Jarayel Technologies homepage) */
+  .font-portal-display {
+    font-family: var(--font-portal-display), serif;
+  }
+  .font-portal-body {
+    font-family: var(--font-portal-body), sans-serif;
+  }
+
+  @keyframes portal-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(14, 128, 116, 0.45); }
+    70% { box-shadow: 0 0 0 8px rgba(14, 128, 116, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(14, 128, 116, 0); }
+  }
+
+  @keyframes spin-slow {
+    to { transform: rotate(360deg); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

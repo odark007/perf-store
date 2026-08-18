@@ -1,10 +1,15 @@
 export async function sendSMS(phone: string, message: string) {
   const apiKey = process.env.ARKESEL_API_KEY;
-  const senderId = process.env.ARKESEL_SENDER_ID || 'LiquorShop';
+  const senderId = process.env.ARKESEL_SENDER_ID;
   const url = "https://sms.arkesel.com/api/v2/sms/send";
 
   if (!apiKey) {
     console.error("SMS Error: ARKESEL_API_KEY is missing");
+    return { success: false, error: "Configuration Error" };
+  }
+
+  if (!senderId) {
+    console.error("SMS Error: ARKESEL_SENDER_ID is missing");
     return { success: false, error: "Configuration Error" };
   }
 

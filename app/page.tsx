@@ -1,98 +1,151 @@
 import React from 'react';
-import Link from 'next/link';
 import { STORES } from '@/lib/stores/config';
-import { Sparkles, ArrowRight, Store as StoreIcon, Globe } from 'lucide-react';
+import HeroScene from '@/components/portal/HeroScene';
+import ShopCard from '@/components/portal/ShopCard';
 
 export const metadata = {
   title: 'Jarayel Technologies | Commerce Platform',
   description: 'Jarayelɔ — the Ga word meaning "merchant" or "trader". A welcoming home for our family of online shops.',
 };
 
+const SHOP_META: Record<string, { accent: 'gold' | 'purple'; icon: React.ReactNode }> = {
+  derme: {
+    accent: 'gold',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+        <path
+          d="M9 2h6M10 2v3.2c0 .4-.15.78-.42 1.06L7.4 8.5c-.6.6-.9 1.4-.9 2.24V19a3 3 0 0 0 3 3h5a3 3 0 0 0 3-3v-8.26c0-.84-.3-1.64-.9-2.24l-2.18-2.24A1.5 1.5 0 0 1 14 5.2V2"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path d="M7 14h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  'play-time': {
+    accent: 'purple',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+        <rect x="4" y="8" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.5" />
+        <circle cx="9" cy="13" r="1" fill="currentColor" />
+        <circle cx="15" cy="13" r="1" fill="currentColor" />
+      </svg>
+    ),
+  },
+};
+
 export default function PortalPage() {
   const stores = Object.values(STORES);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-teal-50/40 to-slate-100">
-      {/* Soft ambient glows */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[40rem] h-[40rem] bg-teal-200/30 rounded-full blur-[120px]" />
-        <div className="absolute -bottom-40 -left-40 w-[40rem] h-[40rem] bg-indigo-200/30 rounded-full blur-[120px]" />
-      </div>
+    <div
+      className="relative font-portal-body text-[#211A2E] overflow-x-hidden"
+      style={{
+        background:
+          'radial-gradient(60% 50% at 85% 8%, rgba(255, 182, 39, 0.25), transparent 60%), radial-gradient(50% 45% at 8% 15%, rgba(108, 79, 214, 0.18), transparent 60%), radial-gradient(60% 50% at 50% 100%, rgba(255, 107, 74, 0.14), transparent 60%), linear-gradient(180deg, #FFF9EF 0%, #FFEFD6 100%)',
+      }}
+    >
+      {/* Film grain overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none z-[2] opacity-[0.035]"
+        aria-hidden="true"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+        }}
+      />
 
-      <div className="relative z-10 container-custom min-h-screen flex flex-col">
+      {/* 3D canvas sits behind everything in the hero */}
+      <HeroScene />
 
-        {/* Header */}
-        <header className="py-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/20">
-              <Globe size={20} className="text-white" />
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-lg leading-none text-slate-800 tracking-tight">Jarayel Technologies</span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-teal-700/70 font-medium">Commerce Platform</span>
-            </div>
+      {/* ---------- NAV ---------- */}
+      <header className="relative z-[3] flex items-center justify-between px-[6vw] pt-[26px] max-[860px]:px-[5vw] max-[860px]:pt-5">
+        <div className="flex items-center gap-3">
+          <span className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center font-portal-display font-black text-[19px] text-white bg-gradient-to-br from-[#FF6B4A] to-[#FFB627] shadow-[0_8px_18px_-6px_rgba(255,107,74,0.55)]">
+            J
+          </span>
+          <div className="flex flex-col leading-[1.15]">
+            <span className="font-bold text-[15px]">Jarayel Technologies</span>
+            <span className="text-[11px] tracking-[0.08em] uppercase text-[#5B5468] max-[520px]:hidden">Commerce Platform</span>
           </div>
+        </div>
+      </header>
 
+      <main>
+        {/* ---------- HERO ---------- */}
+        <section className="relative z-[3] min-h-[92vh] flex items-center px-[6vw] pt-10 pb-[60px] max-[860px]:min-h-0 max-[860px]:pt-[30px] max-[860px]:pb-10">
+          <div className="max-w-[760px]">
+            <p className="inline-flex items-center gap-2 text-[14.5px] font-medium text-[#5B5468] tracking-[0.01em] mb-[26px]">
+              <span className="text-[#FFB627] text-base inline-block animate-[spin-slow_6s_linear_infinite]">✦</span>
+              Jarayel<span className="italic">ɔ</span> — the Ga word meaning{' '}
+              <em className="text-[#6C4FD6] not-italic font-semibold">“merchant”</em> or{' '}
+              <em className="text-[#6C4FD6] not-italic font-semibold">“trader”</em>
+            </p>
 
-        </header>
+            <h1 className="font-portal-display font-black tracking-[-0.01em] leading-[1.06] text-[clamp(2.6rem,6vw,4.6rem)] mb-7 max-[520px]:text-[2.2rem]">
+              We hope you have an{' '}
+              <span className="relative inline-block italic font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FF6B4A] via-[#FFB627] to-[#6C4FD6]">
+                awesome time
+                <svg className="absolute left-0 -bottom-1.5 w-full h-[14px] overflow-visible" viewBox="0 0 300 24" preserveAspectRatio="none" aria-hidden="true">
+                  <path d="M2 18 C 60 4, 120 22, 160 12 S 260 2, 298 14" fill="none" stroke="#FF6B4A" strokeWidth="3" strokeLinecap="round" />
+                </svg>
+              </span>{' '}
+              interacting with our shops.
+            </h1>
 
-        {/* Hero */}
-        <main className="flex-1 flex flex-col items-center justify-center text-center py-20">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 backdrop-blur border border-teal-200 text-teal-800 text-xs font-medium mb-8 animate-fade-in-up">
-            <Sparkles size={14} />
-            Jarayelɔ — the Ga word meaning "merchant" or "trader"
-          </div>
+            <p className="text-lg leading-[1.6] text-[#5B5468] max-w-[500px] mb-9 max-[520px]:text-base">
+              Jarayel Technologies is a home for carefully curated online stores. Pick a shop below, and begin your journey.
+            </p>
 
-          <h1 className="text-4xl md:text-6xl font-bold text-slate-900 tracking-tight leading-tight max-w-3xl">
-            We hope you would have an <span className="text-teal-600">awesome time</span> interacting with our shops.
-          </h1>
-
-          <p className="mt-6 text-lg text-slate-600 max-w-xl font-body">
-            Jarayel Technologies is a home for carefully curated online stores. Pick a shop below and begin your journey.
-          </p>
-
-          {/* Store Selector */}
-          <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
-            {stores.map((store) => (
-              <Link
-                key={store.slug}
-                href={`/${store.slug}`}
-                className="group relative bg-white/80 backdrop-blur border border-slate-200 rounded-2xl p-8 text-left shadow-sm hover:shadow-xl hover:border-teal-400 hover:-translate-y-1 transition-all duration-300"
+            <div className="flex items-center gap-[22px] flex-wrap max-[520px]:flex-col max-[520px]:items-start max-[520px]:gap-3.5">
+              <a
+                href="#shops"
+                className="group inline-flex items-center gap-2.5 bg-[#211A2E] text-[#FFF9EF] font-semibold text-[15px] px-6 py-[15px] rounded-full no-underline shadow-[0_10px_24px_-10px_rgba(33,26,46,0.5)] transition-all duration-[250ms] hover:-translate-y-[3px] hover:bg-[#6C4FD6] hover:shadow-[0_14px_30px_-10px_rgba(108,79,214,0.55)]"
               >
-                <div className="flex items-start justify-between mb-6">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center"
-                    style={{ background: `${store.theme.primaryColor}1A`, color: store.theme.primaryColor }}
-                  >
-                    <StoreIcon size={26} />
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-600">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Open
-                  </span>
-                </div>
-
-                <h2 className="text-2xl font-bold text-slate-900">{store.name}</h2>
-                <p className="text-sm font-semibold uppercase tracking-widest mt-1" style={{ color: store.theme.primaryColor }}>
-                  {store.tagline}
-                </p>
-                <p className="mt-3 text-slate-600 text-sm leading-relaxed">{store.description}</p>
-
-                <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-teal-700 group-hover:gap-3 transition-all">
-                  Visit {store.name}
-                  <ArrowRight size={16} />
-                </div>
-              </Link>
-            ))}
+                Browse the shops
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="transition-transform duration-[250ms] group-hover:translate-x-[3px]">
+                  <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </a>
+              <span className="text-[12.5px] text-[#5B5468] opacity-75">Drag / move your cursor to play with the scene →</span>
+            </div>
           </div>
-        </main>
+        </section>
 
-        {/* Footer */}
-        <footer className="py-8 border-t border-slate-200/70 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-slate-500">© {new Date().getFullYear()} Jarayel Technologies. All rights reserved.</p>
-          <p className="text-xs text-slate-400 italic">Bridging commerce and technology.</p>
-        </footer>
-      </div>
+        {/* ---------- SHOPS ---------- */}
+        <section id="shops" className="relative z-[3] px-[6vw] pt-5 pb-[90px] max-[860px]:px-[5vw] max-[860px]:pt-2.5 max-[860px]:pb-[60px]">
+          <div className="mb-10">
+            <h2 className="font-portal-display font-black text-[clamp(1.8rem,3.4vw,2.6rem)] mb-2">Open for trade</h2>
+            <p className="text-[#5B5468] text-base">Two storefronts, curated with care. More are on the way.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-[26px] max-[860px]:grid-cols-1">
+            {stores.map((store) => {
+              const meta = SHOP_META[store.slug] ?? SHOP_META['derme'];
+              return (
+                <ShopCard
+                  key={store.slug}
+                  href={`/${store.slug}`}
+                  accent={meta.accent}
+                  icon={meta.icon}
+                  name={store.name}
+                  tagline={store.tagline}
+                  description={store.description}
+                />
+              );
+            })}
+          </div>
+        </section>
+      </main>
+
+      {/* ---------- FOOTER ---------- */}
+      <footer className="relative z-[3] flex items-center justify-between flex-wrap gap-2 px-[6vw] pt-[26px] pb-[34px] border-t border-[#211A2E]/[0.08] text-[13.5px] text-[#5B5468] max-[860px]:px-[5vw]">
+        <p>© {new Date().getFullYear()} Jarayel Technologies. All rights reserved.</p>
+        <p className="italic">Bridging commerce and technology.</p>
+      </footer>
     </div>
   );
 }

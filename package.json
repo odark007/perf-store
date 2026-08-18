@@ -20,6 +20,7 @@
     "@tiptap/extension-link": "^3.16.0",
     "@tiptap/react": "^3.16.0",
     "@tiptap/starter-kit": "^3.16.0",
+    "@types/three": "^0.185.4",
     "browser-image-compression": "^2.0.2",
     "chart.js": "^4.5.1",
     "clsx": "^2.1.1",
@@ -30,6 +31,7 @@
     "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.3",
     "tailwind-merge": "^3.4.0",
+    "three": "^0.185.1",
     "zustand": "^5.0.9"
   },
   "devDependencies": {

@@ -56,11 +56,6 @@ const ToyHomePage: React.FC<ToyHomePageProps> = ({
         <div className="container-custom relative z-10 grid lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           {/* Copy Area */}
           <div className="space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-[#e2ddf7] text-[#6857e8] text-xs font-mono font-semibold shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-[#ff8f66] shadow-[0_0_0_3px_rgba(255,143,102,0.25)] animate-pulse" />
-              New arrivals weekly in Accra
-            </div>
-
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-display font-bold text-[#23213d] tracking-tight leading-[1.08]">
               Toys built like <span className="text-[#6857e8]">tomorrow</span>, played with like today.
             </h1>

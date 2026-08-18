@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Jost, Outfit, Nunito } from "next/font/google";
+import { Cormorant_Garamond, Jost, Outfit, Nunito, Fraunces, Sora } from "next/font/google";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import "./globals.css";
 
@@ -31,6 +31,22 @@ const nunito = Nunito({
   display: "swap",
 });
 
+// Portal landing page fonts (Jarayel Technologies homepage)
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["300", "600", "700", "900"],
+  style: ["normal", "italic"],
+  variable: "--font-portal-display",
+  display: "swap",
+});
+
+const sora = Sora({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-portal-body",
+  display: "swap",
+});
+
 // Determine Base URL for SEO
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
   ? (process.env.NEXT_PUBLIC_SITE_URL.startsWith('http')
@@ -50,7 +66,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${jost.variable} ${outfit.variable} ${nunito.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${cormorant.variable} ${jost.variable} ${outfit.variable} ${nunito.variable} ${fraunces.variable} ${sora.variable}`} suppressHydrationWarning>
       <body className="antialiased bg-brand-cream min-h-screen flex flex-col font-body" suppressHydrationWarning>
         {children}
       </body>
