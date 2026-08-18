@@ -2,10 +2,13 @@ import React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getProductBySlug, getRelatedProducts, getProductReviews } from '@/app/actions/shop';
+import { createClient } from '@/lib/supabase/server';
+import { getTables, getStore } from '@/lib/stores/config';
 import ProductGallery from '@/components/shop/product/ProductGallery';
 import ProductInfo from '@/components/shop/product/ProductInfo';
 import ReviewsSection from '@/components/shop/product/ReviewsSection';
 import ProductCard from '@/components/shop/ProductCard';
+import ToyProductDetail from '@/components/shop/toy/ToyProductDetail';
 import { ArrowLeft, Sparkles } from 'lucide-react';
 
 interface PageProps {
@@ -14,13 +17,14 @@ interface PageProps {
 
 // Dynamic Metadata for SEO/Sharing
 export async function generateMetadata({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug, store: storeSlug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return { title: 'Product Not Found' };
 
-  const storeName = 'The Perfume Store Ghana';
-  const title = `${product.title}${product.brand ? ` by ${product.brand}` : ''} | ${storeName}`;
-  const description = product.description?.slice(0, 160) || `Discover ${product.title} at ${storeName}. Authentic luxury fragrances delivered in Ghana.`;
+  const store = getStore(storeSlug);
+  const storeName = store.name;
+  const title = `${product.title} | ${storeName}`;
+  const description = product.description?.slice(0, 160) || `Discover ${product.title} at ${storeName}. Fast delivery in Ghana.`;
 
   return {
     title,
@@ -28,7 +32,6 @@ export async function generateMetadata({ params }: PageProps) {
     openGraph: {
       title,
       description,
-      url: `https://perfumestoreghana.com/products/${slug}`,
       siteName: storeName,
       images: [
         {
@@ -66,7 +69,35 @@ export default async function ProductDetailPage({ params }: PageProps) {
     getProductReviews(product.id)
   ]);
 
-  // 3. Prepare Variants with Stock Logic
+  // =========================================================================
+  // TOY SHOP PRODUCT DETAIL (/play-time)
+  // =========================================================================
+  if (storeSlug === 'play-time') {
+    const supabase = await createClient();
+    const t = getTables(storeSlug);
+
+    // Fetch all RC products for comparison table
+    const { data: rcProducts } = await supabase
+      .from(t.products)
+      .select(`
+        *,
+        variants:${t.productVariants}(price)
+      `)
+      .eq('category', 'RC Vehicles');
+
+    return (
+      <ToyProductDetail
+        product={product}
+        allRcProducts={rcProducts || []}
+        relatedProducts={relatedProducts || []}
+        storeSlug={storeSlug}
+      />
+    );
+  }
+
+  // =========================================================================
+  // PERFUME STORE PRODUCT DETAIL (/derme)
+  // =========================================================================
   const uiVariants = product.variants.map((v: any) => ({
     id: v.id,
     name: v.name,
@@ -98,33 +129,48 @@ export default async function ProductDetailPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* SECTION 1: PRODUCT HERO */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-          {/* Left: Premium Gallery */}
-          <div className="lg:sticky lg:top-24">
-            <ProductGallery image={product.base_image_url} title={product.title} />
-          </div>
+        {/* Top Section: Gallery + Essential Info */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
+          <ProductGallery
+            image={product.base_image_url}
+            title={product.title}
+          />
 
-          {/* Right: Interactive Product Space */}
-          <ProductInfo product={product} variants={uiVariants} />
+          <ProductInfo
+            product={product}
+            variants={uiVariants}
+          />
         </div>
 
-        {/* SECTION 2: RELATED FINDS */}
+        {/* Middle Section: Scent Profile & Reviews Tabs */}
+        <ReviewsSection
+          productId={product.id}
+          reviews={reviews}
+        />
+
+        {/* Bottom Section: Related Products */}
         {relatedProducts.length > 0 && (
-          <section className="pt-24 border-t border-brand-border">
-            <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-              <div className="space-y-2">
-                <span className="text-brand-gold font-bold tracking-[0.3em] uppercase text-[10px]">Discovery</span>
-                <h2 className="text-3xl font-display font-bold text-brand-deep">Olfactive Relatives</h2>
+          <div className="space-y-8 border-t border-brand-border/40 pt-16">
+            <div className="flex items-end justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-gold">
+                  Curated For You
+                </span>
+                <h2 className="text-3xl font-display font-bold text-brand-deep mt-1">
+                  Complementary Scents
+                </h2>
               </div>
-              <Link href={`/${storeSlug}/shop`} className="text-xs font-bold uppercase tracking-widest text-brand-deep hover:text-brand-gold transition-colors underline underline-offset-8">
-                View Entire Collection
+              <Link
+                href={`/${storeSlug}/shop?category=${product.categories?.slug || ''}`}
+                className="text-xs font-bold uppercase tracking-widest text-brand-deep hover:text-brand-gold transition-colors"
+              >
+                View Collection →
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-              {relatedProducts.slice(0, 4).map((p: any) => {
-                const relatedUiVariants = p.variants.map((v: any) => ({
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.map((relProduct: any) => {
+                const relVariants = relProduct.variants.map((v: any) => ({
                   id: v.id,
                   name: v.name,
                   type: v.type,
@@ -135,28 +181,26 @@ export default async function ProductDetailPage({ params }: PageProps) {
 
                 return (
                   <ProductCard
-                    key={p.id}
-                    id={p.id}
-                    slug={p.slug}
-                    title={p.title}
-                    image={p.base_image_url}
-                    category={p.categories?.name || 'Fragrance'}
-                    variants={relatedUiVariants}
-                    isFeatured={p.is_featured}
-                    brand={p.brand}
-                    concentration={p.concentration}
-                    scent_family={p.scent_family}
+                    key={relProduct.id}
+                    id={relProduct.id}
+                    slug={relProduct.slug}
+                    title={relProduct.title}
+                    image={relProduct.base_image_url}
+                    category={relProduct.categories?.name || 'Fragrance'}
+                    variants={relVariants}
+                    isFeatured={relProduct.is_featured}
+                    brand={relProduct.brand}
+                    concentration={relProduct.concentration}
+                    scent_family={relProduct.scent_family}
+                    discountPercent={relProduct.discount_percent}
+                    discountStart={relProduct.discount_start_at}
+                    discountEnd={relProduct.discount_end_at}
                   />
                 );
               })}
             </div>
-          </section>
+          </div>
         )}
-
-        {/* SECTION 3: VOICES (REVIEWS) */}
-        <section id="reviews" className="scroll-mt-24 pt-24 border-t border-brand-border">
-          <ReviewsSection productId={product.id} reviews={reviews} />
-        </section>
 
       </div>
     </div>

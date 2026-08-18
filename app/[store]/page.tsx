@@ -8,31 +8,56 @@ import { getTables } from '@/lib/stores/config';
 import ProductCard from '@/components/shop/ProductCard';
 import BlogCard from '@/components/blog/BlogCard';
 import CampaignCarousel from '@/components/shop/CampaignCarousel';
-import PlayTimeHome from '@/components/shop/PlayTimeHome';
+import ToyHomePage from '@/components/shop/toy/ToyHomePage';
 
 export const metadata = {
-  title: 'The Perfume Store Ghana | Luxury Fragrances & Niche Scents',
-  description: 'Ghana\'s premier destination for authentic luxury fragrances. From timeless classics to rare niche scents, elevate your essence with our curated collection.',
-  openGraph: {
-    title: 'The Perfume Store Ghana | Luxury Fragrances',
-    description: 'Elevate your essence. Discover authentic luxury fragrances delivered to your door in Accra.',
-    images: ['/og-image.png'],
-  },
+  title: 'Jarayel Commerce | Curated Online Stores',
+  description: 'Authentic luxury goods, cutting-edge RC vehicles, robotics, and lifestyle essentials delivered across Ghana.',
 };
 
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage({ params }: { params: Promise<{ store: string }> }) {
   const { store: storeSlug } = await params;
-
-  // Toy shop: render the dedicated RC-template-styled homepage
-  if (storeSlug === 'play-time') {
-    return <PlayTimeHome />;
-  }
-
   const t = getTables(storeSlug);
   const supabase = await createClient();
 
+  // =========================================================================
+  // TOY SHOP HOMEPAGE (/play-time)
+  // =========================================================================
+  if (storeSlug === 'play-time') {
+    const [categoriesRes, featuredRes] = await Promise.all([
+      supabase.from(t.categories).select('id, name, slug, image_url').order('name'),
+      (supabase as any)
+        .from(t.products)
+        .select(`
+          *,
+          ${t.categories}(name),
+          variants:${t.productVariants}(
+            *,
+            inventory:${t.inventory}(current_stock_level)
+          )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(8)
+    ]);
+
+    const categories = categoriesRes.data || [];
+    const featuredProducts = featuredRes.data || [];
+
+    return (
+      <ToyHomePage
+        categories={categories}
+        featuredProducts={featuredProducts}
+        storeSlug={storeSlug}
+      />
+    );
+  }
+
+  // =========================================================================
+  // PERFUME STORE HOMEPAGE (/derme)
+  // =========================================================================
   const [featuredRes, blogRes, samplerRes, campaignRes] = await Promise.all([
     // A. Featured Products
     supabase

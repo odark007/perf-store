@@ -34,7 +34,7 @@ export default async function StoreLayout({
     <>
       <CartDrawer storeSlug={storeSlug} />
       <Navbar storeSlug={storeSlug} />
-      <main className="flex-1 pt-4 md:pt-8">
+      <main className="flex-1">
         {children}
       </main>
       <Footer settings={settings} storeSlug={storeSlug} />

@@ -11,7 +11,9 @@ import {
   LogOut,
   Clock,
   Heart,
-  Sparkles
+  Sparkles,
+  Bot,
+  Gamepad2
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { useCartStore } from '@/lib/store';
@@ -32,6 +34,8 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const isToyShop = storeSlug === 'play-time';
 
   // FIX: Select specific state pieces to trigger re-renders correctly
   const items = useCartStore((state) => state.items);
@@ -83,7 +87,8 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
 
   const cartItemCount = isMounted ? items.reduce((total, item) => total + item.quantity, 0) : 0;
 
-  const navLinks = [
+  // Nav links per store
+  const perfumeNavLinks = [
     { label: 'All Fragrances', href: `/${storeSlug}/shop` },
     { label: "Men's", href: `/${storeSlug}/shop?category=mens` },
     { label: "Women's", href: `/${storeSlug}/shop?category=womens` },
@@ -92,13 +97,220 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
     { label: 'Body Mists', href: `/${storeSlug}/shop?category=body-mists` },
   ];
 
+  const toyNavLinks = [
+    { label: 'Home', href: `/${storeSlug}` },
+    { label: 'Shop All', href: `/${storeSlug}/shop` },
+    { label: 'RC Vehicles', href: `/${storeSlug}/shop?category=rc-vehicles` },
+    { label: 'Robotics', href: `/${storeSlug}/shop?category=robotics` },
+    { label: 'Camera & VR', href: `/${storeSlug}/shop?category=camera-vr` },
+    { label: 'App-Controlled', href: `/${storeSlug}/shop?category=app-controlled` },
+    { label: 'AI-Powered', href: `/${storeSlug}/shop?category=ai-powered` },
+  ];
+
+  const navLinks = isToyShop ? toyNavLinks : perfumeNavLinks;
+
   const isActive = (href: string) => {
+    if (href === `/${storeSlug}`) return pathname === `/${storeSlug}`;
     if (href === `/${storeSlug}/shop`) return pathname === `/${storeSlug}/shop` && !searchParams.get('category');
     return pathname === `/${storeSlug}/shop` && searchParams.get('category') === href.split('category=')[1];
   };
 
+  // =========================================================================
+  // TOY SHOP NAVBAR
+  // =========================================================================
+  if (isToyShop) {
+    return (
+      <header
+        className={`sticky top-0 z-[var(--z-sticky)] bg-[#f5f3fc]/90 backdrop-blur-md border-b border-[#e2ddf7] transition-transform duration-300 h-[72px] ${
+          isVisible ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
+        <div className="container-custom h-full flex items-center justify-between">
+          {/* Logo */}
+          <Link href={`/${storeSlug}`} className="flex items-center gap-3 z-20 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#8c7ef6] to-[#7be8ff] relative shadow-sm flex items-center justify-center">
+              <div className="w-3.5 h-3.5 bg-[#f5f3fc] rounded-md animate-pulse" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-lg leading-tight text-[#23213d] tracking-tight font-display">
+                Tomorrow&apos;s Playground
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.2em] text-[#8c7ef6] font-semibold font-mono">
+                RC & Robotics
+              </span>
+            </div>
+          </Link>
+
+          {/* Desktop Links */}
+          <nav className="hidden lg:flex items-center gap-5">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                className={`text-[13px] font-semibold font-body transition-colors relative py-1 ${
+                  isActive(link.href)
+                    ? 'text-[#23213d] after:content-[""] after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[3px] after:bg-[#ff8f66] after:rounded-full'
+                    : 'text-[#5b5876] hover:text-[#6857e8]'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 md:gap-3 z-20">
+            {/* Search link */}
+            <Link
+              href={`/${storeSlug}/shop`}
+              className="w-10 h-10 rounded-full bg-white border border-[#e2ddf7] grid place-items-center text-[#23213d] hover:-translate-y-0.5 hover:shadow-sm transition-all"
+              aria-label="Search toys"
+            >
+              <Search size={18} />
+            </Link>
+
+            {/* User Menu */}
+            <div className="relative hidden md:block">
+              {user ? (
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="w-10 h-10 rounded-full bg-white border border-[#e2ddf7] grid place-items-center text-[#23213d] hover:-translate-y-0.5 hover:shadow-sm transition-all"
+                  aria-label="User menu"
+                >
+                  <User size={18} />
+                </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="px-4 py-2 rounded-full bg-white border border-[#e2ddf7] text-[#23213d] hover:border-[#8c7ef6] hover:text-[#6857e8] transition-all text-xs font-bold font-body inline-flex items-center gap-1.5"
+                >
+                  <User size={15} />
+                  <span>Login</span>
+                </Link>
+              )}
+
+              {isUserMenuOpen && (
+                <div className="fixed inset-0 z-30 cursor-default" onClick={() => setIsUserMenuOpen(false)} />
+              )}
+
+              {isUserMenuOpen && user && (
+                <div className="absolute right-0 mt-3 w-60 bg-white rounded-2xl shadow-xl border border-[#e2ddf7] py-2 origin-top-right z-40">
+                  <div className="px-4 py-3 border-b border-[#ecebfa]">
+                    <p className="text-[10px] text-[#5b5876] font-bold uppercase tracking-widest font-mono">Account</p>
+                    <p className="text-xs font-semibold text-[#23213d] truncate">{user.email}</p>
+                  </div>
+                  <div className="py-1">
+                    <Link
+                      href={`/${storeSlug}/account/history`}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#23213d] hover:bg-[#f5f3fc] transition-all font-semibold font-body"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Clock size={14} /> Order History
+                    </Link>
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-[#6857e8] hover:bg-[#f5f3fc] transition-all font-semibold font-body"
+                      onClick={() => setIsUserMenuOpen(false)}
+                    >
+                      <Sparkles size={14} /> Admin Portal
+                    </Link>
+                  </div>
+                  <div className="border-t border-[#ecebfa] pt-1">
+                    <button
+                      onClick={handleSignOut}
+                      className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-500 hover:bg-red-50 transition-all font-semibold font-body text-left"
+                    >
+                      <LogOut size={14} /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Cart Icon */}
+            <button
+              onClick={toggleCart}
+              className="relative w-10 h-10 rounded-full bg-white border border-[#e2ddf7] grid place-items-center text-[#23213d] hover:-translate-y-0.5 hover:shadow-sm transition-all"
+              aria-label="Toggle cart"
+            >
+              <ShoppingCart size={18} />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#ff8f66] text-white text-[10px] font-mono font-bold w-5 h-5 rounded-full grid place-items-center border-2 border-[#f5f3fc]">
+                  {cartItemCount}
+                </span>
+              )}
+            </button>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              className="lg:hidden w-10 h-10 rounded-full bg-white border border-[#e2ddf7] grid place-items-center text-[#23213d]"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        {isMobileMenuOpen && (
+          <div className="absolute top-[72px] left-0 w-full bg-[#f5f3fc] border-b border-[#e2ddf7] shadow-xl lg:hidden h-[calc(100vh-4.5rem)] overflow-y-auto z-40 p-5">
+            <nav className="space-y-2">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`flex items-center gap-3 p-3.5 rounded-xl font-bold font-body text-sm transition-all ${
+                    isActive(link.href) ? 'bg-[#8c7ef6] text-white' : 'text-[#23213d] bg-white border border-[#e2ddf7]'
+                  }`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
+
+              <div className="h-px bg-[#e2ddf7] my-4" />
+
+              {user ? (
+                <div className="p-4 bg-white rounded-2xl border border-[#e2ddf7]">
+                  <p className="text-[10px] text-[#5b5876] font-mono uppercase tracking-widest mb-1">Signed in</p>
+                  <p className="text-xs font-bold text-[#23213d] mb-3">{user.email}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href={`/${storeSlug}/account/history`}
+                      className="flex items-center justify-center gap-2 p-2.5 bg-[#f5f3fc] rounded-lg text-[#23213d] text-xs font-bold"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      <Clock size={14} /> Orders
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center justify-center gap-2 p-2.5 bg-red-50 rounded-lg text-red-600 text-xs font-bold"
+                    >
+                      <LogOut size={14} /> Logout
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  className="flex items-center justify-center gap-2 p-3.5 bg-[#ff8f66] text-white rounded-xl font-bold text-sm shadow-md"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <User size={16} /> Login / Sign Up
+                </Link>
+              )}
+            </nav>
+          </div>
+        )}
+      </header>
+    );
+  }
+
+  // =========================================================================
+  // PERFUME STORE NAVBAR (Original luxury style)
+  // =========================================================================
   return (
-    <header className={`sticky top-0 z-[var(--z-sticky)] bg-[#1a0a2e]/92 backdrop-blur-xl border-b border-[rgba(201,168,76,0.25)] transition-transform duration-300 h-18 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+    <header className={`sticky top-0 z-[var(--z-sticky)] bg-[#1a0a2e]/92 backdrop-blur-xl border-b border-[rgba(201,168,76,0.25)] transition-transform duration-300 h-[72px] ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="container-custom h-full flex items-center justify-between">
 
         {/* 1. Logo */}
@@ -228,7 +440,7 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
 
       {/* 4. Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="absolute top-18 left-0 w-full bg-[#1a0a2e] border-b border-[rgba(201,168,76,0.25)] shadow-2xl lg:hidden animate-slide-down h-[calc(100vh-4.5rem)] overflow-y-auto z-40">
+        <div className="absolute top-[72px] left-0 w-full bg-[#1a0a2e] border-b border-[rgba(201,168,76,0.25)] shadow-2xl lg:hidden animate-slide-down h-[calc(100vh-4.5rem)] overflow-y-auto z-40">
           <nav className="p-4 space-y-2">
             {navLinks.map((link) => (
               <Link

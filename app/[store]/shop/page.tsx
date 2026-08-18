@@ -2,6 +2,7 @@ import React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { getTables } from '@/lib/stores/config';
 import ShopLayoutClient from '@/components/shop/ShopLayoutClient';
+import ToyShopLayoutClient from '@/components/shop/toy/ToyShopLayoutClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,8 @@ export default async function ShopPage(props: ShopPageProps) {
   const t = getTables(storeSlug);
   const params = await props.searchParams;
   const supabase = await createClient();
+
+  const isToyShop = storeSlug === 'play-time';
 
   // 1. Parse Filters
   const categorySlug = params.category as string;
@@ -44,20 +47,58 @@ export default async function ShopPage(props: ShopPageProps) {
     }
   }
 
-  // 3. Fetch Metadata (Categories, Brands, Concentration, Scent Family)
-  const [categoriesRes, productsMetaRes] = await Promise.all([
-    supabase.from(t.categories).select('id, name, slug').order('name'),
-    supabase.from(t.products).select('brand, concentration, scent_family')
-  ]);
+  // 3. Fetch Categories
+  const { data: categoriesData } = await supabase
+    .from(t.categories)
+    .select('id, name, slug')
+    .order('name');
 
-  const categories = categoriesRes.data || [];
-  const allProductsMeta = productsMetaRes.data || [];
+  const categories = categoriesData || [];
 
+  // =========================================================================
+  // TOY SHOP CATALOG
+  // =========================================================================
+  if (isToyShop) {
+    const { data: toyProducts, error: toyError } = await (supabase as any)
+      .from(t.products)
+      .select(`
+        *,
+        ${t.categories}(name, slug),
+        variants:${t.productVariants}(
+          *,
+          inventory:${t.inventory}(current_stock_level)
+        )
+      `)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (toyError) {
+      console.error('Toy Shop Error:', toyError);
+      return <div className="container-custom py-12">Error loading toys.</div>;
+    }
+
+    return (
+      <ToyShopLayoutClient
+        categories={categories}
+        products={(toyProducts || []) as any}
+        storeSlug={storeSlug}
+      />
+    );
+  }
+
+  // =========================================================================
+  // PERFUME STORE CATALOG
+  // =========================================================================
+  const { data: productsMeta } = await supabase
+    .from(t.products)
+    .select('brand, concentration, scent_family');
+
+  const allProductsMeta = productsMeta || [];
   const uniqueBrands = Array.from(new Set(allProductsMeta.map(p => p.brand).filter(Boolean))).sort();
   const uniqueConcentrations = Array.from(new Set(allProductsMeta.map(p => p.concentration).filter(Boolean))).sort();
   const uniqueScentFamilies = Array.from(new Set(allProductsMeta.map(p => p.scent_family).filter(Boolean))).sort();
 
-  // 4. Build Main Product Query
+  // Build Main Product Query for Perfume
   let query = supabase
     .from(t.products)
     .select(`

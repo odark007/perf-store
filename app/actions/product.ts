@@ -27,7 +27,7 @@ interface ProductInput {
   discount_start_at: string | null;
   discount_end_at: string | null;
 
-  // New Fragrance Attributes
+  // Fragrance Attributes
   concentration?: string;
   scent_family?: string;
   scent_notes?: {
@@ -39,6 +39,16 @@ interface ProductInput {
   sillage?: string;
   gender?: string;
   occasion?: string[];
+
+  // Toy Attributes
+  age_rating?: string;
+  mfr_part?: string;
+  tags?: string[];
+  specs?: Record<string, string>;
+  shipping_info?: Record<string, any>;
+  compare_at_price?: number | null;
+  cogs?: number | null;
+  gallery?: string[];
 }
 
 // Helper to sanitize promotion data
@@ -96,14 +106,23 @@ export async function createProduct(input: ProductInput) {
         discount_percent: promo.percent,
         discount_start_at: promo.start,
         discount_end_at: promo.end,
-        // Map new fields
+        // Fragrance fields
         concentration: input.concentration,
         scent_family: input.scent_family,
         scent_notes: input.scent_notes,
         longevity: input.longevity,
         sillage: input.sillage,
         gender: input.gender,
-        occasion: input.occasion
+        occasion: input.occasion,
+        // Toy fields
+        age_rating: input.age_rating,
+        mfr_part: input.mfr_part,
+        tags: input.tags,
+        specs: input.specs,
+        shipping_info: input.shipping_info,
+        compare_at_price: input.compare_at_price,
+        cogs: input.cogs,
+        gallery: input.gallery
       })
       .select()
       .single();
@@ -176,14 +195,23 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
       discount_percent: promo.percent,
       discount_start_at: promo.start,
       discount_end_at: promo.end,
-      // Map new fields
+      // Fragrance fields
       concentration: input.concentration,
       scent_family: input.scent_family,
       scent_notes: input.scent_notes,
       longevity: input.longevity,
       sillage: input.sillage,
       gender: input.gender,
-      occasion: input.occasion
+      occasion: input.occasion,
+      // Toy fields
+      age_rating: input.age_rating,
+      mfr_part: input.mfr_part,
+      tags: input.tags,
+      specs: input.specs,
+      shipping_info: input.shipping_info,
+      compare_at_price: input.compare_at_price,
+      cogs: input.cogs,
+      gallery: input.gallery
     }).eq('id', productId);
 
     // Update Inventory Name
