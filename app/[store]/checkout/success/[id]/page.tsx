@@ -46,8 +46,8 @@ export default async function SuccessPage({ params }: SuccessPageProps) {
   }
 
   // WhatsApp Logic
-  const phoneNumber = "233244000000";
-  const message = `Hello! I just placed Order #${order.order_number} (Amount: GH₵${order.total_amount}). I have made payment via MoMo. Please confirm.`;
+  const phoneNumber = store?.contact.whatsappPhone || "233244000000";
+  const message = `Hello! I just placed an order (Amount: GH₵${order.total_amount}). I have made payment via MoMo. Please confirm.`;
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
   return (
@@ -58,12 +58,9 @@ export default async function SuccessPage({ params }: SuccessPageProps) {
           <CheckCircle className="text-green-600" size={40} />
         </div>
 
-        <h1 className="text-3xl font-display font-bold text-secondary-900 mb-2">
+        <h1 className="text-3xl font-display font-bold text-secondary-900 mb-8">
           Order Placed Successfully!
         </h1>
-        <p className="text-secondary-500 mb-8">
-          Order #{order.order_number} has been received.
-        </p>
 
         {/* Conditional Content based on Payment Method */}
         {order.payment_method === 'manual_momo' && (
