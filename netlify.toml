@@ -15,6 +15,11 @@
   NODE_VERSION = "22"
   NEXT_TELEMETRY_DISABLED = "1"
 
+# Public env values are embedded in client bundles and server JS, so Netlify
+# secrets scanning reports them as findings. They are not private secrets.
+SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_ANON_KEY,NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,PAYSTACK_CALLBACK_BASE_URL,NEXT_PUBLIC_GA_ID,ARKESEL_SENDER_ID"
+SECRETS_SCAN_OMIT_PATHS = ".netlify/**"
+
 # Netlify's Next.js runtime handles SSR, ISR, route handlers, API routes and middleware.
 [[plugins]]
   package = "@netlify/plugin-nextjs"
