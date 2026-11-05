@@ -2,6 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Avoid filling Netlify's disk: reuse dependency/source caches across builds.
+  experimental: {
+    webpackBuildWorker: true,
+  },
   images: {
     remotePatterns: [
       {

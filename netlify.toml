@@ -8,7 +8,7 @@
 # Required environment variables differ per site. See docs/royal-perfume-hub.md.
 
 [build]
-  command = "npm run build"
+  command = "npx next build --webpack"
   publish = ".next"
 
 [build.environment]

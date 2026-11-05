@@ -1,51 +1,46 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Jost, Outfit, Nunito, Fraunces, Sora } from "next/font/google";
+import localFont from "next/font/local";
 import { GoogleAnalytics } from '@next/third-parties/google';
 import "./globals.css";
 
-// Font Configuration
-const cormorant = Cormorant_Garamond({
-  subsets: ["latin"],
-  weight: ["300", "400", "600"],
-  style: ["normal", "italic"],
+// Self-hosted fonts. next/font/google fetches from Google at build time, which
+// fails on Netlify (Turbopack internal resolution) and on offline/sandboxed
+// builds. Local fonts are deterministic and faster.
+
+const cormorant = localFont({
+  src: [
+    { path: "./fonts/cormorant-garamond-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/cormorant-garamond-latin-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "./fonts/cormorant-garamond-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-display",
   display: "swap",
 });
 
-const jost = Jost({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+const jost = localFont({
+  src: [
+    { path: "./fonts/jost-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/jost-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/jost-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-body",
   display: "swap",
 });
 
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-store-display",
-  display: "swap",
-});
+// Store accents fall back to the primary body/display fonts.
+const outfit = jost;
+const nunito = jost;
+const fraunces = cormorant;
+const sora = jost;
 
-const nunito = Nunito({
-  subsets: ["latin"],
-  variable: "--font-store-body",
-  display: "swap",
-});
-
-// Portal landing page fonts (Jarayel Technologies homepage)
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["300", "600", "700", "900"],
-  style: ["normal", "italic"],
-  variable: "--font-portal-display",
-  display: "swap",
-});
-
-const sora = Sora({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-portal-body",
-  display: "swap",
-});
+const fontClasses = [
+  cormorant.variable,
+  jost.variable,
+  outfit.variable,
+  nunito.variable,
+  fraunces.variable,
+  sora.variable,
+].join(" ");
 
 // Determine Base URL for SEO
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL
@@ -66,7 +61,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${jost.variable} ${outfit.variable} ${nunito.variable} ${fraunces.variable} ${sora.variable}`} suppressHydrationWarning>
+    <html lang="en" className={fontClasses} suppressHydrationWarning>
       <body className="antialiased bg-brand-cream min-h-screen flex flex-col font-body" suppressHydrationWarning>
         {children}
       </body>
