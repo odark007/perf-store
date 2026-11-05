@@ -33,6 +33,8 @@ const nunito = jost;
 const fraunces = cormorant;
 const sora = jost;
 
+export const runtime = "nodejs";
+
 const fontClasses = [
   cormorant.variable,
   jost.variable,
