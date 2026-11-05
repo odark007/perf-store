@@ -16,7 +16,7 @@ export default function ShopCard({
   description,
 }: {
   href: string;
-  accent: 'gold' | 'purple';
+  accent: 'gold' | 'purple' | 'plum';
   icon: ReactNode;
   name: string;
   tagline: string;
@@ -60,6 +60,14 @@ export default function ShopCard({
   };
 
   const isGold = accent === 'gold';
+  const isPlum = accent === 'plum';
+  const accentGlow = isGold ? 'bg-[#FFB627]' : isPlum ? 'bg-[#553553]' : 'bg-[#6C4FD6]';
+  const accentIcon = isGold
+    ? 'bg-[#FFB627]/[0.16] text-[#C9871A]'
+    : isPlum
+      ? 'bg-[#553553]/[0.14] text-[#553553]'
+      : 'bg-[#6C4FD6]/[0.14] text-[#6C4FD6]';
+  const accentText = isGold ? 'text-[#C9871A]' : isPlum ? 'text-[#553553]' : 'text-[#6C4FD6]';
 
   return (
     <Link
@@ -75,17 +83,11 @@ export default function ShopCard({
       {/* Glow blob that follows the cursor */}
       <div
         ref={glowRef}
-        className={`absolute w-[220px] h-[220px] rounded-full blur-[50px] -top-20 -right-20 opacity-35 hover:opacity-55 pointer-events-none transition-opacity duration-300 ${
-          isGold ? 'bg-[#FFB627]' : 'bg-[#6C4FD6]'
-        }`}
+        className={`absolute w-[220px] h-[220px] rounded-full blur-[50px] -top-20 -right-20 opacity-35 hover:opacity-55 pointer-events-none transition-opacity duration-300 ${accentGlow}`}
       />
 
       <div className="relative flex items-center justify-between mb-[22px]">
-        <div
-          className={`w-[46px] h-[46px] rounded-[13px] flex items-center justify-center ${
-            isGold ? 'bg-[#FFB627]/[0.16] text-[#C9871A]' : 'bg-[#6C4FD6]/[0.14] text-[#6C4FD6]'
-          }`}
-        >
+        <div className={`w-[46px] h-[46px] rounded-[13px] flex items-center justify-center ${accentIcon}`}>
           {icon}
         </div>
         <span className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-[0.06em] text-[#0E8074]">
@@ -96,9 +98,7 @@ export default function ShopCard({
 
       <h3 className="relative font-portal-display font-bold text-2xl text-[#211A2E] mb-1.5">{name}</h3>
       <p
-        className={`relative text-[12.5px] font-bold uppercase tracking-[0.05em] mb-3.5 ${
-          isGold ? 'text-[#C9871A]' : 'text-[#6C4FD6]'
-        }`}
+        className={`relative text-[12.5px] font-bold uppercase tracking-[0.05em] mb-3.5 ${accentText}`}
       >
         {tagline}
       </p>

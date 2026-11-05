@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { sendSMS } from '@/lib/sms';
 import { formatCurrency } from '@/lib/utils';
-import { getTables } from '@/lib/stores/config';
+import { getTables, getStoreOrNull } from '@/lib/stores/config';
 import emailjs from '@emailjs/nodejs';
 
 // Helper to generate HTML Table for Email
@@ -55,12 +55,18 @@ const generateInvoiceHTML = (items: any[], totals: { subtotal: number, tax: numb
 };
 
 // Main Notification Function
-export async function sendNotification(triggerId: string, orderData: any, storeSlug?: string) {
-  console.log(`[Notification] Triggered: ${triggerId} for Order: ${orderData.order_number}`);
+export async function sendNotification(triggerId: string, orderData: any, storeSlug: string) {
+  console.log(`[Notification] Triggered: ${triggerId} for Order: ${orderData.order_number} (store: ${storeSlug})`);
 
   try {
+    // Tenant is mandatory: never fall back to derme's templates/settings.
+    if (!getStoreOrNull(storeSlug)) {
+      console.error(`[Notification] Unknown store "${storeSlug}" — refusing to send.`);
+      return;
+    }
+
     const supabase = await createClient();
-    const t = getTables(storeSlug || 'derme');
+    const t = getTables(storeSlug);
 
     // 1. Fetch Global Settings
     const { data: settings, error: settingsError } = await supabase.from(t.storeSettings).select('*').single();
@@ -109,9 +115,17 @@ export async function sendNotification(triggerId: string, orderData: any, storeS
       '{{invoice_table}}': invoiceHTML
     };
 
+    // Customer-facing copy must never carry the order number. Strip any
+    // {{order_number}} placeholders (and the decorative "#...") from SMS and
+    // email so templates can be safely reused. Admin alerts keep the number.
+    const isAdminAlert = triggerId.includes('admin');
     const replaceVars = (text: string) => {
       let result = text || '';
+      if (!isAdminAlert) {
+        result = result.replace(/#\{\{order_number\}\}/g, '').replace(/\{\{order_number\}\}/g, '');
+      }
       Object.entries(vars).forEach(([key, value]) => {
+        if (!isAdminAlert && key === '{{order_number}}') return;
         // Use a global, case-insensitive replacement if needed, but standard logic assumes exact match
         result = result.replace(new RegExp(key, 'g'), value as string);
       });

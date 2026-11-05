@@ -8,7 +8,18 @@ export interface Category {
 
 export type FragranceSize = '30ml' | '50ml' | '100ml' | '200ml';
 
-export type FragranceConcentration = 'EDT' | 'EDP' | 'Parfum' | 'Cologne' | 'Body Mist';
+export type FragranceConcentration =
+  | 'Extrait de Parfum'
+  | 'Parfum'
+  | 'Eau de Parfum'
+  | 'Eau de Toilette'
+  | 'Eau Fraiche'
+  | 'Eau de Senteur'
+  | 'Splash'
+  | 'EDT'
+  | 'EDP'
+  | 'Cologne'
+  | 'Body Mist';
 
 export type ScentFamily =
   | 'Floral'
@@ -51,6 +62,17 @@ export interface Product {
   sillage?: 'Intimate' | 'Moderate' | 'Strong' | 'Massive';
   occasion?: string[];
   gender?: 'mens' | 'womens' | 'unisex';
+
+  // Bundle / Set (Gift Sets)
+  set_type?: 'gift-set' | null;
+  bundle_items?: BundleItem[];
+}
+
+export interface BundleItem {
+  product_id?: string | null; // set when referencing a listed product
+  title: string;
+  qty: number;
+  custom?: boolean; // true when the item exists only inside this set
 }
 
 export interface ProductVariant {

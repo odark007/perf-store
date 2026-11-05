@@ -23,7 +23,12 @@ export async function POST(req: Request) {
 
     if (event.event === 'charge.success') {
       const orderId = event.data.metadata?.order_id;
-      const storeSlug = event.data.metadata?.store_slug || 'derme';
+      const storeSlug = event.data.metadata?.store_slug;
+
+      if (!storeSlug) {
+        console.error('[Webhook] Missing store_slug in payment metadata');
+        return NextResponse.json({ received: true });
+      }
 
       const store = getStoreOrNull(storeSlug);
       if (!store) {

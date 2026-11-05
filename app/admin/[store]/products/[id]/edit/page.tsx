@@ -30,10 +30,20 @@ export default async function EditProductPage({ params }: PageProps) {
     return <div className="p-8">Product not found</div>;
   }
 
+  // 3. Listed (single-item) products for bundle building, excluding this product itself
+  const { data: allProducts } = await supabase
+    .from(t.products)
+    .select('id, title')
+    .is('set_type', null)
+    .eq('is_active', true)
+    .neq('id', id)
+    .order('title');
+
   return (
     <div>
       <ProductForm 
         categories={categories || []} 
+        allProducts={allProducts || []}
         initialData={product} // Pass data here
       />
     </div>

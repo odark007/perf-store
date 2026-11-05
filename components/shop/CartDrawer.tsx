@@ -8,12 +8,13 @@ import { useCartStore } from '@/lib/store';
 import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 import { sendGAEvent } from '@/lib/analytics';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 interface CartDrawerProps {
   storeSlug?: string;
 }
 
-const CartDrawer = ({ storeSlug = 'derme' }: CartDrawerProps) => {
+const CartDrawer = ({ storeSlug = getPublicStoreSlug() }: CartDrawerProps) => {
   // FIX: Select items directly for reactivity
   const {
     items,

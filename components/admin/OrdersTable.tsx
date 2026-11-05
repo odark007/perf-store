@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { Eye } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { Order } from '@/lib/types';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -13,7 +14,7 @@ interface OrdersTableProps {
 
 const OrdersTable: React.FC<OrdersTableProps> = ({ orders }) => {
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
   
   const getPaymentBadge = (status: string) => {
     switch (status) {

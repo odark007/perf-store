@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentTables } from '@/lib/stores/context';
+import { getCurrentStore, getCurrentTables } from '@/lib/stores/context';
 
 // Helper for Slug Generation
 function generateSlug(title: string) {
@@ -86,6 +86,7 @@ export async function updatePost(id: string, formData: FormData) {
 export async function deletePost(id: string) {
   const supabase = await createClient();
   const t = await getCurrentTables();
+  const buckets = (await getCurrentStore()).buckets;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
@@ -97,11 +98,11 @@ export async function deletePost(id: string) {
     .single();
 
   // 2. Delete the Image from Storage (if it exists and is ours)
-  if (post?.cover_image_url && post.cover_image_url.includes('blog-images-perfume-store')) {
+  if (post?.cover_image_url && post.cover_image_url.includes(buckets.blog)) {
     try {
-      const path = post.cover_image_url.split('/blog-images/')[1];
+      const path = post.cover_image_url.split(`/${buckets.blog}/`)[1];
       if (path) {
-        await supabase.storage.from('blog-images-perfume-store').remove([path]);
+        await supabase.storage.from(buckets.blog).remove([path]);
       }
     } catch (err) {
       console.error("Failed to cleanup image", err);

@@ -277,10 +277,12 @@ const ToyProductDetail: React.FC<ToyProductDetailProps> = ({
                 <ShieldCheck size={18} className="text-[#4fd6ae] shrink-0" />
                 <span>ASTM Safety Certified</span>
               </div>
-              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white border border-[#e2ddf7] text-xs font-body text-[#23213d]">
-                <Truck size={18} className="text-[#ff8f66] shrink-0" />
-                <span>Same-day Accra Dispatch</span>
-              </div>
+              {product.same_day_dispatch && (
+                <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white border border-[#e2ddf7] text-xs font-body text-[#23213d]">
+                  <Truck size={18} className="text-[#ff8f66] shrink-0" />
+                  <span>Same-day Accra Dispatch</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

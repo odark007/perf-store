@@ -15,22 +15,28 @@ import {
   Sparkles,
   CreditCard,
   Smartphone,
-  Battery
+  Battery,
+  Music2
 } from 'lucide-react';
 import { StoreSettings } from '@/lib/types';
+import { getStoreOrNull, STORES, DEFAULT_STORE_SLUG } from '@/lib/stores/config';
+import { formatPhoneForGH } from '@/lib/utils';
 
 interface FooterProps {
   settings?: StoreSettings | null;
   storeSlug?: string;
 }
 
-const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
+const Footer: React.FC<FooterProps> = ({ settings, storeSlug = DEFAULT_STORE_SLUG }) => {
   const currentYear = new Date().getFullYear();
-  const isToyShop = storeSlug === 'play-time';
+  const store = getStoreOrNull(storeSlug) ?? STORES[DEFAULT_STORE_SLUG];
+  storeSlug = store.slug;
+  const isToyShop = store.isToy;
 
-  // Fallbacks if DB is empty
-  const phone = settings?.primary_phone || (isToyShop ? '+233 24 000 0000' : '+233 24 000 0000');
-  const email = settings?.support_email || (isToyShop ? 'concierge@playtime.gh' : 'concierge@perfumestore.gh');
+  // DB settings win; the store registry is the safe fallback.
+  const phone = settings?.primary_phone || store.contact.primaryPhone;
+  const email = settings?.support_email || store.contact.supportEmail;
+  const address = `${store.contact.addressLine}, ${store.contact.city}, ${store.contact.country}`;
 
   // =========================================================================
   // TOY SHOP FOOTER
@@ -106,22 +112,33 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
                   <div className="w-3 h-3 bg-[#23213d] rounded-sm animate-pulse" />
                 </div>
                 <span className="font-bold text-xl text-white tracking-tight font-display">
-                  Tomorrow&apos;s Playground
+                  {store.shortName}
                 </span>
               </Link>
               <p className="text-xs leading-relaxed max-w-sm text-[#b7b3dd]">
-                Toys engineered for curiosity. Designed, tested, and shipped with the specs to prove it. Specializing in RC cars, AI robots, and app-connected toys in Ghana.
+                {store.description}
               </p>
               <div className="flex items-center gap-3 pt-2">
-                <a href="#" className="w-9 h-9 rounded-full bg-[#2e2a4d] hover:bg-[#8c7ef6] hover:text-white grid place-items-center text-[#b7b3dd] transition-all" aria-label="Instagram">
-                  <Instagram size={16} />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-[#2e2a4d] hover:bg-[#8c7ef6] hover:text-white grid place-items-center text-[#b7b3dd] transition-all" aria-label="Facebook">
-                  <Facebook size={16} />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-[#2e2a4d] hover:bg-[#8c7ef6] hover:text-white grid place-items-center text-[#b7b3dd] transition-all" aria-label="Twitter">
-                  <Twitter size={16} />
-                </a>
+                {store.socials.instagram && (
+                  <a href={store.socials.instagram} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-[#2e2a4d] hover:bg-[#8c7ef6] hover:text-white grid place-items-center text-[#b7b3dd] transition-all" aria-label="Instagram">
+                    <Instagram size={16} />
+                  </a>
+                )}
+                {store.socials.facebook && (
+                  <a href={store.socials.facebook} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-[#2e2a4d] hover:bg-[#8c7ef6] hover:text-white grid place-items-center text-[#b7b3dd] transition-all" aria-label="Facebook">
+                    <Facebook size={16} />
+                  </a>
+                )}
+                {store.socials.tiktok && (
+                  <a href={store.socials.tiktok} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-[#2e2a4d] hover:bg-[#8c7ef6] hover:text-white grid place-items-center text-[#b7b3dd] transition-all" aria-label="TikTok">
+                    <Music2 size={16} />
+                  </a>
+                )}
+                {store.socials.x && (
+                  <a href={store.socials.x} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-[#2e2a4d] hover:bg-[#8c7ef6] hover:text-white grid place-items-center text-[#b7b3dd] transition-all" aria-label="X">
+                    <Twitter size={16} />
+                  </a>
+                )}
               </div>
             </div>
 
@@ -171,7 +188,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
         {/* Bottom Bar */}
         <div className="border-t border-[#3b3859] py-6">
           <div className="container-custom flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-mono text-[#8a86b8]">
-            <p>© {currentYear} Tomorrow&apos;s Playground. All rights reserved.</p>
+            <p>© {currentYear} {store.shortName}. All rights reserved.</p>
             <div className="flex items-center gap-6">
               <Link href={`/${storeSlug}/privacy`} className="hover:text-white">Privacy</Link>
               <Link href={`/${storeSlug}/terms`} className="hover:text-white">Terms</Link>
@@ -192,7 +209,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
       { label: "Men's Fragrances", href: `/${storeSlug}/shop?category=mens` },
       { label: "Women's Fragrances", href: `/${storeSlug}/shop?category=womens` },
       { label: 'Unisex & Niche', href: `/${storeSlug}/shop?category=unisex` },
-      { label: 'Gift Sets', href: `/${storeSlug}/shop?category=gift-sets` },
+      { label: 'Gift Sets', href: `/${storeSlug}/specials/gift-sets` },
       { label: 'Body Mists', href: `/${storeSlug}/shop?category=body-mists` },
     ],
     support: [
@@ -212,12 +229,12 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
   };
 
   return (
-    <footer className="bg-[#1a0a2e] text-[#c4b8d4] border-t border-[rgba(201,168,76,0.2)] mt-auto font-body">
+    <footer className="bg-brand-deep text-brand-subtle border-t border-brand-border mt-auto font-body">
       {/* 1. Value Props / Trust Signals */}
-      <div className="border-b border-[rgba(201,168,76,0.1)]">
+      <div className="border-b border-brand-border">
         <div className="container-custom py-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center md:text-left">
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+            <div className="p-3 bg-brand-mid rounded-lg text-brand-gold">
               <ShieldCheck size={24} />
             </div>
             <div>
@@ -226,7 +243,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+            <div className="p-3 bg-brand-mid rounded-lg text-brand-gold">
               <Truck size={24} />
             </div>
             <div>
@@ -235,7 +252,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+            <div className="p-3 bg-brand-mid rounded-lg text-brand-gold">
               <RotateCcw size={24} />
             </div>
             <div>
@@ -244,7 +261,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
             </div>
           </div>
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4">
-            <div className="p-3 bg-[#2d1554] rounded-lg text-[#c9a84c]">
+            <div className="p-3 bg-brand-mid rounded-lg text-brand-gold">
               <Sparkles size={24} />
             </div>
             <div>
@@ -262,26 +279,37 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
           {/* Brand Column */}
           <div className="lg:col-span-4 space-y-6">
             <Link href={`/${storeSlug}`} className="flex items-center gap-3 group justify-center lg:justify-start">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#e8c97a] rounded-full flex items-center justify-center shadow-lg shadow-gold/20">
-                <span className="font-display font-bold text-[#1a0a2e] text-xl">P</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-brand-gold to-brand-gold-light rounded-full flex items-center justify-center shadow-lg shadow-brand-gold/20">
+                <span className="font-display font-bold text-brand-deep text-xl">{store.monogram}</span>
               </div>
-              <span className="font-display font-bold text-2xl text-[#c9a84c] tracking-tight uppercase">
-                The Perfume Store
+              <span className="font-display font-bold text-2xl text-brand-gold tracking-tight uppercase">
+                {store.shortName}
               </span>
             </Link>
             <p className="text-sm leading-relaxed max-w-sm text-center lg:text-left">
-              Ghana&apos;s premier destination for luxury fragrances. We curate only the finest authentic scents from iconic fashion houses and niche artisanal perfumers across the globe.
+              {store.description}
             </p>
             <div className="flex items-center justify-center lg:justify-start gap-4 pt-2">
-              <a href="#" className="w-10 h-10 flex items-center justify-center bg-[#2d1554] hover:bg-[#c9a84c] hover:text-[#1a0a2e] rounded-full transition-all border border-[rgba(201,168,76,0.1)]" aria-label="Instagram">
-                <Instagram size={18} />
-              </a>
-              <a href="#" className="w-10 h-10 flex items-center justify-center bg-[#2d1554] hover:bg-[#c9a84c] hover:text-[#1a0a2e] rounded-full transition-all border border-[rgba(201,168,76,0.1)]" aria-label="Facebook">
-                <Facebook size={18} />
-              </a>
-              <a href="#" className="w-10 h-10 flex items-center justify-center bg-[#2d1554] hover:bg-[#c9a84c] hover:text-[#1a0a2e] rounded-full transition-all border border-[rgba(201,168,76,0.1)]" aria-label="Twitter">
-                <Twitter size={18} />
-              </a>
+              {store.socials.instagram && (
+                <a href={store.socials.instagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-brand-mid hover:bg-brand-gold hover:text-brand-deep rounded-full transition-all border border-brand-border" aria-label="Instagram">
+                  <Instagram size={18} />
+                </a>
+              )}
+              {store.socials.facebook && (
+                <a href={store.socials.facebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-brand-mid hover:bg-brand-gold hover:text-brand-deep rounded-full transition-all border border-brand-border" aria-label="Facebook">
+                  <Facebook size={18} />
+                </a>
+              )}
+              {store.socials.tiktok && (
+                <a href={store.socials.tiktok} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-brand-mid hover:bg-brand-gold hover:text-brand-deep rounded-full transition-all border border-brand-border" aria-label="TikTok">
+                  <Music2 size={18} />
+                </a>
+              )}
+              {store.socials.x && (
+                <a href={store.socials.x} target="_blank" rel="noopener noreferrer" className="w-10 h-10 flex items-center justify-center bg-brand-mid hover:bg-brand-gold hover:text-brand-deep rounded-full transition-all border border-brand-border" aria-label="X">
+                  <Twitter size={18} />
+                </a>
+              )}
             </div>
           </div>
 
@@ -294,7 +322,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
               <ul className="space-y-4">
                 {perfumeFooterLinks.shop.map(link => (
                   <li key={link.label}>
-                    <Link href={link.href} className="text-xs hover:text-[#c9a84c] transition-colors">{link.label}</Link>
+                    <Link href={link.href} className="text-xs hover:text-brand-gold transition-colors">{link.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -304,7 +332,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
               <ul className="space-y-4">
                 {perfumeFooterLinks.support.map(link => (
                   <li key={link.label}>
-                    <Link href={link.href} className="text-xs hover:text-[#c9a84c] transition-colors">{link.label}</Link>
+                    <Link href={link.href} className="text-xs hover:text-brand-gold transition-colors">{link.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -312,17 +340,27 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
             <div className="col-span-2 md:col-span-1">
               <h4 className="font-bold text-white mb-6 uppercase tracking-[0.2em] text-[10px]">Concierge</h4>
               <ul className="space-y-4">
+                {email && (
+                  <li className="flex items-center gap-3 text-xs">
+                    <Mail size={14} className="text-brand-gold" />
+                    <a href={`mailto:${email}`} className="hover:text-brand-gold">{email}</a>
+                  </li>
+                )}
                 <li className="flex items-center gap-3 text-xs">
-                  <Mail size={14} className="text-[#c9a84c]" />
-                  <a href={`mailto:${email}`} className="hover:text-[#c9a84c]">{email}</a>
+                  <Phone size={14} className="text-brand-gold" />
+                  <a href={`tel:+${formatPhoneForGH(phone)}`} className="hover:text-brand-gold">{phone}</a>
                 </li>
-                <li className="flex items-center gap-3 text-xs">
-                  <Phone size={14} className="text-[#c9a84c]" />
-                  <a href={`tel:${phone.replace(/\s+/g, '')}`} className="hover:text-[#c9a84c]">{phone}</a>
-                </li>
+                {store.contact.secondaryPhone && (
+                  <li className="flex items-center gap-3 text-xs">
+                    <Phone size={14} className="text-brand-gold" />
+                    <a href={`tel:+${formatPhoneForGH(store.contact.secondaryPhone)}`} className="hover:text-brand-gold">
+                      {store.contact.secondaryPhone}
+                    </a>
+                  </li>
+                )}
                 <li className="flex items-start gap-3 text-xs">
-                  <MapPin size={14} className="text-[#c9a84c] mt-0.5 shrink-0" />
-                  <span>East Legon, Private Showroom<br />Accra, Ghana</span>
+                  <MapPin size={14} className="text-brand-gold mt-0.5 shrink-0" />
+                  <span>{address}</span>
                 </li>
               </ul>
             </div>
@@ -331,19 +369,19 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = 'derme' }) => {
       </div>
 
       {/* 3. Bottom Bar */}
-      <div className="border-t border-[rgba(201,168,76,0.1)] bg-[#130624]">
+      <div className="border-t border-brand-border bg-brand-deep">
         <div className="container-custom py-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-[10px] text-gold-pale/40 uppercase tracking-widest font-medium">
-            © {currentYear} The Perfume Store Ghana. All Rights Reserved.
+          <p className="text-[10px] text-brand-gold-pale/40 uppercase tracking-widest font-medium">
+            © {currentYear} {store.name}. All Rights Reserved.
           </p>
           <div className="flex items-center gap-6">
-            <Link href={`/${storeSlug}/privacy`} className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Privacy</Link>
-            <Link href={`/${storeSlug}/terms`} className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Terms</Link>
-            <Link href={`/${storeSlug}/shipping`} className="text-[10px] uppercase tracking-widest hover:text-[#c9a84c] transition-colors">Shipping</Link>
+            <Link href={`/${storeSlug}/privacy`} className="text-[10px] uppercase tracking-widest hover:text-brand-gold transition-colors">Privacy</Link>
+            <Link href={`/${storeSlug}/terms`} className="text-[10px] uppercase tracking-widest hover:text-brand-gold transition-colors">Terms</Link>
+            <Link href={`/${storeSlug}/shipping`} className="text-[10px] uppercase tracking-widest hover:text-brand-gold transition-colors">Shipping</Link>
           </div>
           <div className="flex items-center gap-4">
-            <CreditCard size={20} className="text-gold-pale/20" />
-            <span className="text-[10px] uppercase tracking-widest text-gold-pale/20 border border-[rgba(201,168,76,0.1)] px-2 py-1 rounded">SSL Secure</span>
+            <CreditCard size={20} className="text-brand-gold-pale/20" />
+            <span className="text-[10px] uppercase tracking-widest text-brand-gold-pale/20 border border-brand-border px-2 py-1 rounded">SSL Secure</span>
           </div>
         </div>
       </div>

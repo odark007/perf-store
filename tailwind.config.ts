@@ -9,17 +9,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Colour tokens are driven by CSS variables so each store can supply its
+        // own palette (see lib/stores/config.ts → getStoreThemeVars).
+        // The RGB-channel format keeps Tailwind opacity modifiers working:
+        //   bg-brand-gold/10 → rgb(var(--brand-gold) / 0.1)
         brand: {
-          deep: '#1a0a2e',   // primary dark background
-          mid: '#2d1554',   // secondary purple
-          light: '#4a2080',   // accent purple
-          gold: '#c9a84c',   // primary gold
-          'gold-light': '#e8c97a',
-          'gold-pale': '#f5e6b8',
-          cream: '#fdf8f0',   // page background
-          border: 'rgba(201,168,76,0.25)',
-          muted: '#8a7a9e',
-          subtle: '#c4b8d4',
+          deep: 'rgb(var(--brand-deep) / <alpha-value>)',
+          mid: 'rgb(var(--brand-mid) / <alpha-value>)',
+          light: 'rgb(var(--brand-light) / <alpha-value>)',
+          gold: 'rgb(var(--brand-gold) / <alpha-value>)',
+          'gold-light': 'rgb(var(--brand-gold-light) / <alpha-value>)',
+          'gold-pale': 'rgb(var(--brand-gold-pale) / <alpha-value>)',
+          cream: 'rgb(var(--brand-cream) / <alpha-value>)',
+          border: 'rgb(var(--brand-gold) / 0.25)',
+          muted: 'rgb(var(--brand-muted))',
+          subtle: 'rgb(var(--brand-subtle))',
         },
         success: '#10b981', // Emerald
         warning: '#f59e0b',

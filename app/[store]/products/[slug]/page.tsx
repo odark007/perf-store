@@ -9,7 +9,7 @@ import ProductInfo from '@/components/shop/product/ProductInfo';
 import ReviewsSection from '@/components/shop/product/ReviewsSection';
 import ProductCard from '@/components/shop/ProductCard';
 import ToyProductDetail from '@/components/shop/toy/ToyProductDetail';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { ArrowLeft, Sparkles, Package } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ slug: string; store: string }>;
@@ -141,6 +141,36 @@ export default async function ProductDetailPage({ params }: PageProps) {
             variants={uiVariants}
           />
         </div>
+
+        {/* Bundle Contents (Gift Sets) */}
+        {product.set_type && Array.isArray(product.bundle_items) && product.bundle_items.length > 0 && (
+          <div className="bg-white/60 border border-brand-border/40 rounded-3xl p-8 md:p-10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-brand-gold/15 text-brand-gold flex items-center justify-center">
+                <Package size={20} />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-brand-gold">
+                  Gift Set
+                </span>
+                <h2 className="text-2xl font-display font-bold text-brand-deep">What's in this set</h2>
+              </div>
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {product.bundle_items.map((item: any, i: number) => (
+                <li key={i} className="flex items-center gap-3 bg-brand-cream/40 border border-brand-border/30 rounded-2xl px-4 py-3">
+                  <span className="w-7 h-7 rounded-full bg-brand-gold/20 text-brand-deep text-xs font-bold flex items-center justify-center shrink-0">
+                    {item.qty}×
+                  </span>
+                  <span className="text-sm font-medium text-brand-deep flex-1">{item.title}</span>
+                  {item.custom && (
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-brand-gold/80 shrink-0">Set exclusive</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Middle Section: Scent Profile & Reviews Tabs */}
         <ReviewsSection

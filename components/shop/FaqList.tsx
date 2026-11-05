@@ -6,12 +6,13 @@ import { Search, ChevronDown, ChevronUp, MessageCircle } from 'lucide-react';
 import { faqData } from '@/lib/data/faqs';
 import Button from '@/components/ui/Button';
 import Link from 'next/link';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 const FaqList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
 
   // Filter Logic
   const filteredFaqs = faqData.filter(faq => 

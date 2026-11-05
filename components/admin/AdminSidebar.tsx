@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -13,18 +13,18 @@ import {
   Tag,
   BookOpen, // For Blog
   Megaphone,
-  Store,
-  ChevronDown
+  Store
 } from 'lucide-react';
 import { signOutAction } from '@/app/auth/actions';
+import { STORES, getPublicStoreSlug } from '@/lib/stores/config';
 
 const AdminSidebar = () => {
   const pathname = usePathname();
-  const router = useRouter();
 
-  // Extract store slug from /admin/<store>/... (fallback: derme)
+  // Extract store slug from /admin/<store>/...; locked deployments set
+  // NEXT_PUBLIC_STORE_SLUG so a bare /admin still resolves to the right tenant.
   const segments = pathname.split('/').filter(Boolean);
-  const storeSlug = segments[0] === 'admin' && segments[1] ? segments[1] : 'derme';
+  const storeSlug = getPublicStoreSlug(segments[0] === 'admin' ? segments[1] : null);
 
   const links = [
     { label: 'Dashboard', href: `/admin/${storeSlug}/dashboard`, icon: LayoutDashboard },
@@ -38,15 +38,6 @@ const AdminSidebar = () => {
     { label: 'Settings', href: `/admin/${storeSlug}/settings`, icon: Settings },
   ];
 
-  const handleStoreSwitch = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const target = e.target.value;
-    if (target === 'portal') {
-      router.push('/admin');
-    } else if (target && target !== storeSlug) {
-      router.push(`/admin/${target}/dashboard`);
-    }
-  };
-
   return (
     // FIX 1: Changed min-h-screen to h-screen and removed overflow-y-auto from parent
     <aside className="w-64 bg-brand-cream border-r border-brand-border text-brand-deep h-screen flex flex-col fixed left-0 top-0 shadow-lg">
@@ -57,20 +48,11 @@ const AdminSidebar = () => {
         <p className="text-xs text-brand-gold font-bold uppercase tracking-wider">Jarayel Technologies</p>
       </div>
 
-      {/* Store Switcher */}
+      {/* Current store (static; change stores from the /admin portal) */}
       <div className="px-4 pt-4 flex-shrink-0">
-        <div className="relative">
-          <Store size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-muted" />
-          <select
-            value={storeSlug}
-            onChange={handleStoreSwitch}
-            className="w-full appearance-none pl-9 pr-8 py-2.5 text-sm font-medium text-brand-deep bg-white border border-brand-border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold/40"
-          >
-            <option value="portal">Switch Store...</option>
-            <option value="derme">The Perfume Store</option>
-            <option value="play-time">Play-Time</option>
-          </select>
-          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-muted" />
+        <div className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-brand-deep bg-white border border-brand-border rounded-lg">
+          <Store size={16} className="text-brand-muted" />
+          <span className="truncate">{STORES[storeSlug].shortName}</span>
         </div>
       </div>
 

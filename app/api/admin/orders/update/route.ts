@@ -1,11 +1,25 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 import { sendNotification } from '@/lib/notification';
-import { getTables } from '@/lib/stores/config';
+import { getTables, getStoreOrNull } from '@/lib/stores/config';
+import { getCurrentStoreSlugOrNull } from '@/lib/stores/context';
 
 export async function POST(req: Request) {
   try {
-    const { orderId, field, value, orderNumber, storeSlug = 'derme' } = await req.json();
+    const { orderId, field, value, orderNumber, storeSlug } = await req.json();
+
+    // Tenant is required — never default to derme.
+    if (!storeSlug || !getStoreOrNull(storeSlug)) {
+      return NextResponse.json({ error: 'Invalid or missing store' }, { status: 400 });
+    }
+
+    // The request may only act on the store it was made from.
+    const activeStore = await getCurrentStoreSlugOrNull();
+    if (!activeStore || activeStore !== storeSlug) {
+      return NextResponse.json({ error: 'Store context mismatch' }, { status: 403 });
+    }
 
     // 1. Init Admin Client
     const supabase = createClient(
@@ -14,6 +28,32 @@ export async function POST(req: Request) {
     );
 
     const t = getTables(storeSlug);
+
+    // Authorization: only a Royal/derme manager or super admin may mutate orders.
+    // The service-role client below bypasses RLS, so this check is mandatory.
+    const cookieStore = await cookies();
+    const authClient = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll() { /* read-only auth check */ },
+        },
+      }
+    );
+    const { data: { user } } = await authClient.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    const { data: profile } = await authClient
+      .from(t.profiles)
+      .select('role')
+      .eq('id', user.id)
+      .single();
+    if (profile?.role !== 'super_admin' && profile?.role !== 'store_manager') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // 2. Fetch Current Status BEFORE Update (Safety Check)
     const { data: currentOrder, error: fetchError } = await supabase
@@ -99,11 +139,11 @@ export async function POST(req: Request) {
       };
 
       if (field === 'delivery_status') {
-        if (value === 'dispatched') await sendNotification('status_dispatched', notifyData);
-        if (value === 'delivered') await sendNotification('status_delivered', notifyData);
+        if (value === 'dispatched') await sendNotification('status_dispatched', notifyData, storeSlug);
+        if (value === 'delivered') await sendNotification('status_delivered', notifyData, storeSlug);
       } 
       else if (field === 'payment_status') {
-        if (value === 'paid') await sendNotification('payment_received', notifyData);
+        if (value === 'paid') await sendNotification('payment_received', notifyData, storeSlug);
       }
     }
 

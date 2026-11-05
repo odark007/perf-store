@@ -1,14 +1,21 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { User, Mail, Lock, ArrowRight } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { loginAction } from '../actions';
+import { getPublicStoreSlug, STORES } from '@/lib/stores/config';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [storeSlug, setStoreSlug] = useState(getPublicStoreSlug());
+  const store = STORES[storeSlug];
+
+  useEffect(() => {
+    setStoreSlug(getPublicStoreSlug());
+  }, []);
 
   const handleSubmit = async (formData: FormData) => {
     setLoading(true);
@@ -32,11 +39,12 @@ export default function LoginPage() {
           </div>
           <h1 className="text-2xl font-display font-bold text-secondary-900">Welcome</h1>
           <p className="text-secondary-500 text-sm mt-1">
-            Sign in to access your account.
+            Sign in to {store.shortName}.
           </p>
         </div>
 
         <form action={handleSubmit} className="space-y-5">
+          <input type="hidden" name="storeSlug" value={storeSlug} />
           <div>
             <label className="block text-sm font-medium text-secondary-700 mb-1">Email Address</label>
             <div className="relative">
@@ -84,12 +92,12 @@ export default function LoginPage() {
         <div className="mt-8 pt-6 border-t border-secondary-100 text-center space-y-4">
           <p className="text-sm text-secondary-600">
             Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-primary-600 hover:text-primary-700 font-bold">
+            <Link href={`/auth/signup?store=${storeSlug}`} className="text-primary-600 hover:text-primary-700 font-bold">
               Sign Up
             </Link>
           </p>
           
-          <Link href="/shop" className="inline-flex items-center gap-1 text-sm text-secondary-500 hover:text-secondary-900 transition-colors">
+          <Link href={`/${storeSlug}/shop`} className="inline-flex items-center gap-1 text-sm text-secondary-500 hover:text-secondary-900 transition-colors">
             Continue as Guest <ArrowRight size={14} />
           </Link>
         </div>

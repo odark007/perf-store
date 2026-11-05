@@ -99,6 +99,7 @@ export default async function ShopPage(props: ShopPageProps) {
   const uniqueScentFamilies = Array.from(new Set(allProductsMeta.map(p => p.scent_family).filter(Boolean))).sort();
 
   // Build Main Product Query for Perfume
+  // Exclude bundle/set products (Gift Sets) — they get their own dedicated page.
   let query = supabase
     .from(t.products)
     .select(`
@@ -107,7 +108,8 @@ export default async function ShopPage(props: ShopPageProps) {
         *,
         inventory:${t.inventory} (current_stock_level)
       )
-    `);
+    `)
+    .is('set_type', null);
 
   // Apply Filters
   if (targetCategoryId) query = query.eq('category_id', targetCategoryId);
@@ -131,7 +133,25 @@ export default async function ShopPage(props: ShopPageProps) {
   const { data: products, error } = await query;
 
   if (error) {
-    console.error("Shop Error:", error);
+    const err = error as any;
+    const missingTable =
+      err?.code === 'PGRST205' ||
+      /could not find the table|relation .* does not exist/i.test(String(err?.message || ''));
+
+    if (missingTable) {
+      // Expected before a tenant's tables are provisioned — not a runtime fault.
+      console.warn(`[shop] ${storeSlug} tables are not provisioned yet.`);
+      return (
+        <div className="container-custom py-24 text-center">
+          <h1 className="text-3xl font-display font-bold text-brand-deep mb-3">Catalogue coming soon</h1>
+          <p className="text-brand-muted max-w-md mx-auto">
+            This store is still being set up. Please check back shortly.
+          </p>
+        </div>
+      );
+    }
+
+    console.error("Shop Error:", err);
     return <div className="container-custom py-12">Error loading products.</div>;
   }
 

@@ -12,7 +12,11 @@ interface ImageUploadProps {
   onChange: (url: string) => void;
   onRemove: () => void;
   folder?: string;
-  bucket?: string; // <-- New Prop
+  /**
+   * Tenant bucket name. Required so an upload can never silently land in
+   * another store's bucket. Use `getStoreBuckets(storeSlug)`.
+   */
+  bucket: string;
 }
 
 const ImageUpload: React.FC<ImageUploadProps> = ({
@@ -20,7 +24,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   onRemove,
   folder = 'uploads',
-  bucket = 'product-images-perfume-store' // Default to product bucket
+  bucket,
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);

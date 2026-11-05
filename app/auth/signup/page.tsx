@@ -1,16 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { UserPlus, Mail, Lock } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/client';
+import { getPublicStoreSlug, STORES } from '@/lib/stores/config';
 
 export default function SignUpPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [storeSlug, setStoreSlug] = useState(getPublicStoreSlug());
+  const store = STORES[storeSlug];
+
+  useEffect(() => {
+    setStoreSlug(getPublicStoreSlug());
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -25,6 +32,8 @@ export default function SignUpPage() {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      // Store-scoped profile creation (read by the per-tenant auth trigger).
+      options: { data: { store_slug: storeSlug } },
     });
 
     if (error) {
@@ -33,8 +42,8 @@ export default function SignUpPage() {
     } else {
       // CHECK: Did Supabase log them in automatically?
       if (data.session) {
-        // Yes -> Go to Shop
-        router.push('/shop');
+        // Yes -> Go to this store's shop
+        router.push(`/${storeSlug}/shop`);
       } else {
         // No -> Email confirmation is required
         alert("Account created! Please check your email to verify.");
@@ -52,10 +61,11 @@ export default function SignUpPage() {
             <UserPlus className="text-primary-600" size={24} />
           </div>
           <h1 className="text-2xl font-display font-bold text-secondary-900">Create Account</h1>
-          <p className="text-secondary-500 text-sm">Join LiquorShop for faster checkout and exclusive offers.</p>
+          <p className="text-secondary-500 text-sm">Join {store.shortName} for faster checkout and exclusive offers.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="hidden" name="storeSlug" value={storeSlug} />
           <div>
             <label className="block text-sm font-medium text-secondary-700 mb-1">Email</label>
             <div className="relative">
@@ -81,7 +91,7 @@ export default function SignUpPage() {
 
         <div className="mt-6 text-center text-sm text-secondary-500">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-primary-600 hover:text-primary-700 font-medium">
+          <Link href={`/auth/login?store=${storeSlug}`} className="text-primary-600 hover:text-primary-700 font-medium">
             Log In
           </Link>
         </div>

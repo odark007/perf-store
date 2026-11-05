@@ -2,15 +2,16 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentTables } from '@/lib/stores/context';
+import { getCurrentStore, getCurrentTables } from '@/lib/stores/context';
 
 // Helper to check Admin
 async function checkAdmin() {
   const supabase = await createClient();
   const t = await getCurrentTables();
+  const buckets = (await getCurrentStore()).buckets;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Unauthorized');
-  return { supabase, t };
+  return { supabase, t, buckets };
 }
 
 export async function createCampaign(formData: FormData) {
@@ -42,7 +43,7 @@ export async function createCampaign(formData: FormData) {
 
 export async function deleteCampaign(id: string) {
   try {
-    const { supabase, t } = await checkAdmin();
+    const { supabase, t, buckets } = await checkAdmin();
 
     // 1. Get Campaign to check for Image
     const { data: campaign } = await supabase
@@ -52,11 +53,11 @@ export async function deleteCampaign(id: string) {
       .single();
 
     // 2. Clean up Storage (Ghost File Logic)
-    if (campaign && campaign.media_type === 'image' && campaign.media_url.includes('marketing-assets-perfume-store')) {
+    if (campaign && campaign.media_type === 'image' && campaign.media_url.includes(buckets.marketing)) {
       try {
-        const path = campaign.media_url.split('/marketing-assets/')[1];
+        const path = campaign.media_url.split(`/${buckets.marketing}/`)[1];
         if (path) {
-          await supabase.storage.from('marketing-assets-perfume-store').remove([path]);
+          await supabase.storage.from(buckets.marketing).remove([path]);
         }
       } catch (err) {
         console.error("Failed to delete banner image", err);
@@ -90,7 +91,7 @@ export async function toggleCampaignStatus(id: string, currentStatus: boolean) {
 
 export async function updateCampaign(id: string, formData: FormData) {
   try {
-    const { supabase, t } = await checkAdmin();
+    const { supabase, t, buckets } = await checkAdmin();
 
     const media_type = formData.get('media_type') as 'image' | 'youtube';
     const media_url = formData.get('media_url') as string;
@@ -103,10 +104,10 @@ export async function updateCampaign(id: string, formData: FormData) {
       .single();
 
     if (oldCampaign && oldCampaign.media_url !== media_url) {
-      if (oldCampaign.media_type === 'image' && oldCampaign.media_url.includes('marketing-assets-perfume-store')) {
+      if (oldCampaign.media_type === 'image' && oldCampaign.media_url.includes(buckets.marketing)) {
         try {
-          const path = oldCampaign.media_url.split('/marketing-assets/')[1];
-          if (path) await supabase.storage.from('marketing-assets-perfume-store').remove([path]);
+          const path = oldCampaign.media_url.split(`/${buckets.marketing}/`)[1];
+          if (path) await supabase.storage.from(buckets.marketing).remove([path]);
         } catch (err) {
           console.error("Image cleanup failed", err);
         }

@@ -1,11 +1,17 @@
 import React from 'react';
 import FaqList from '@/components/shop/FaqList';
 import { faqData } from '@/lib/data/faqs';
+import { getStoreOrNull } from '@/lib/stores/config';
 
-export const metadata = {
-  title: 'Frequently Asked Questions | LiquorShop Ghana',
-  description: 'Find answers about delivery, payments, returns, and bulk orders.',
-};
+export async function generateMetadata({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const store = getStoreOrNull(storeSlug);
+  if (!store) return { title: 'Frequently Asked Questions' };
+  return {
+    title: `Frequently Asked Questions | ${store.name}`,
+    description: 'Find answers about delivery, payments, returns, and bulk orders.',
+  };
+}
 
 export default function FaqPage() {
   

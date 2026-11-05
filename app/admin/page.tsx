@@ -1,11 +1,18 @@
 import React from 'react';
 import Link from 'next/link';
-import { STORES } from '@/lib/stores/config';
+import { redirect } from 'next/navigation';
+import { STORES, getLockedStoreSlug } from '@/lib/stores/config';
 import { Store, ArrowRight } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminHomePage() {
+  // Locked deployments (Royal, etc.) never show the multi-store chooser.
+  const lockedSlug = getLockedStoreSlug();
+  if (lockedSlug) {
+    redirect(`/admin/${lockedSlug}/dashboard`);
+  }
+
   return (
     <div className="min-h-screen bg-secondary-50">
       <main className="p-8 max-w-4xl mx-auto">

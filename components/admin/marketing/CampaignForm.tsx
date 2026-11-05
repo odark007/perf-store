@@ -6,6 +6,7 @@ import { Save, ArrowLeft, Image as ImageIcon, Youtube, Link as LinkIcon } from '
 import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/admin/input/ImageUpload';
 import { createCampaign, updateCampaign } from '@/app/actions/marketing';
+import { getPublicStoreSlug, getStoreBuckets } from '@/lib/stores/config';
 
 interface Props {
   initialData?: any;
@@ -16,7 +17,8 @@ interface Props {
 const CampaignForm: React.FC<Props> = ({ initialData, featuredProducts, categories }) => {
   const router = useRouter();
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
+  const storeBuckets = getStoreBuckets(storeSlug);
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
   
@@ -147,7 +149,7 @@ const CampaignForm: React.FC<Props> = ({ initialData, featuredProducts, categori
                 value={mediaUrl} 
                 onChange={setMediaUrl} 
                 onRemove={() => setMediaUrl('')} 
-                bucket="marketing-assets-perfume-store"
+                bucket={storeBuckets.marketing}
                 folder="banners"
               />
             ) : (

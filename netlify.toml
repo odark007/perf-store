@@ -1,0 +1,20 @@
+# Netlify deployment configuration for the Jarayel storefronts.
+#
+# Multi-tenant model:
+#   Site A (main):  /derme, /play-time, /  (portal)
+#   Site B (Royal): STORE_SLUG=royal-perfume-hub, storefront served at /
+#                   and /admin rewritten to /admin/royal-perfume-hub
+#
+# Required environment variables differ per site. See docs/royal-perfume-hub.md.
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NEXT_TELEMETRY_DISABLED = "1"
+
+# Netlify's Next.js runtime handles SSR, ISR, route handlers, API routes and middleware.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

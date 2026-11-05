@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
 import { CartItem } from '@/lib/types';
 import { getDiscountedPrice, formatPhoneForGH } from '@/lib/utils'; // Fixed: Consolidated imports
 import { sendNotification } from '@/lib/notification';
@@ -18,12 +19,20 @@ interface OrderPayload {
 }
 
 export async function placeOrder(payload: OrderPayload) {
-  const supabase = await createClient();
+  const authClient = await createClient();
   const t = await getCurrentTables();
   const store = await getCurrentStore();
 
-  // 1. Get Current User
-  const { data: { user } } = await supabase.auth.getUser();
+  // 1. Get Current User (from the SSR session)
+  const { data: { user } } = await authClient.auth.getUser();
+
+  // Orders, order items and stock writes use the service role because the
+  // Royal policies do not expose those writes to the anon role.
+  const supabase = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
 
   try {
     // 2. FETCH DATA (Inventory + Pricing Validation)
@@ -150,7 +159,8 @@ export async function placeOrder(payload: OrderPayload) {
         delivery_status: 'processing',
         delivery_address: payload.deliveryAddress,
         notes: payload.notes,
-        store_slug: payload.storeSlug || store.slug
+        // Tenant is derived from the server-side store context, never the client.
+        store_slug: store.slug
       })
       .select()
       .single();
@@ -194,8 +204,8 @@ export async function placeOrder(payload: OrderPayload) {
       console.log(`[Checkout] Triggering Notifications (${payload.paymentMethod})`);
 
       try {
-        await sendNotification('new_order_admin', notificationData);
-        await sendNotification('new_order_customer', notificationData);
+        await sendNotification('new_order_admin', notificationData, store.slug);
+        await sendNotification('new_order_customer', notificationData, store.slug);
       } catch (notifyErr) {
         console.error("[Checkout] Notification Trigger Failed:", notifyErr);
       }

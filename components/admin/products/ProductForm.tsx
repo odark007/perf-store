@@ -21,13 +21,33 @@ import {
 import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/admin/input/ImageUpload';
 import { createProduct, updateProduct } from '@/app/actions/product';
+import { getPublicStoreSlug, getStoreBuckets } from '@/lib/stores/config';
 
 interface ProductFormProps {
   categories: { id: string; name: string }[];
+  allProducts?: { id: string; title: string }[];
   initialData?: any;
 }
 
-const CONCENTRATIONS = ['EDT', 'EDP', 'Parfum', 'Cologne', 'Body Mist'];
+interface BundleRow {
+  product_id: string | null; // null => custom (not listed in store)
+  title: string;
+  qty: number;
+}
+
+const CONCENTRATIONS = [
+  'Extrait de Parfum',
+  'Parfum',
+  'Eau de Parfum',
+  'Eau de Toilette',
+  'Eau Fraiche',
+  'Eau de Senteur',
+  'Splash',
+  'EDT',
+  'EDP',
+  'Cologne',
+  'Body Mist',
+];
 const SCENT_FAMILIES = ['Floral', 'Woody', 'Oriental', 'Fresh', 'Citrus', 'Aquatic', 'Gourmand', 'Chypre', 'Fougère'];
 const LONGEVITY_OPTS = ['2-4hrs', '4-6hrs', '6-8hrs', '8+hrs'];
 const SILLAGE_OPTS = ['Intimate', 'Moderate', 'Strong', 'Massive'];
@@ -48,10 +68,11 @@ const TOY_FEATURE_TAGS = [
   { value: 'rechargeable', label: 'Rechargeable' },
 ];
 
-const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) => {
+const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [], initialData }) => {
   const router = useRouter();
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
+  const storeBuckets = getStoreBuckets(storeSlug);
   const isToyShop = storeSlug === 'play-time';
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
@@ -62,6 +83,11 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
   const [categoryId, setCategoryId] = useState('');
   const [image, setImage] = useState('');
   const [brand, setBrand] = useState(isToyShop ? "Tomorrow's Playground" : '');
+
+  // Bundle / Set builder (perfume store only)
+  const [bundleItems, setBundleItems] = useState<BundleRow[]>([]);
+  const [pickProductId, setPickProductId] = useState('');
+  const [customItemName, setCustomItemName] = useState('');
 
   // Perfume Attributes
   const [concentration, setConcentration] = useState('EDP');
@@ -79,6 +105,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
   const [compareAtPrice, setCompareAtPrice] = useState<number | ''>('');
   const [cogs, setCogs] = useState<number | ''>('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [sameDayDispatch, setSameDayDispatch] = useState(false);
 
   // Toy Specs
   const [connectivity, setConnectivity] = useState('');
@@ -143,6 +170,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
       setCompareAtPrice(initialData.compare_at_price ?? '');
       setCogs(initialData.cogs ?? '');
       setSelectedTags(initialData.tags || []);
+      setSameDayDispatch(initialData.same_day_dispatch || false);
 
       if (initialData.specs) {
         setConnectivity(initialData.specs['Connectivity'] || '');
@@ -170,6 +198,17 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
       if (initialData.discount_start_at) setStartDate(initialData.discount_start_at.slice(0, 16));
       if (initialData.discount_end_at) setEndDate(initialData.discount_end_at.slice(0, 16));
 
+      // Bundle / Set items
+      if (initialData.bundle_items) {
+        setBundleItems(
+          (initialData.bundle_items as any[]).map(b => ({
+            product_id: b.product_id ?? null,
+            title: b.title,
+            qty: b.qty || 1,
+          }))
+        );
+      }
+
       setVariants(initialData.variants || []);
     } else if (categories.length > 0) {
       setCategoryId(categories[0].id);
@@ -195,6 +234,39 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
     setSelectedTags(prev =>
       prev.includes(tagVal) ? prev.filter(t => t !== tagVal) : [...prev, tagVal]
     );
+  };
+
+  // --- Bundle / Set helpers (perfume store only) ---
+  const selectedCategory = categories.find(c => c.id === categoryId);
+  const setType: 'gift-set' | null =
+    !isToyShop && selectedCategory && selectedCategory.name.trim().toLowerCase() === 'gift sets'
+      ? 'gift-set'
+      : null;
+
+  const addBundleProduct = () => {
+    if (!pickProductId) return;
+    const prod = allProducts.find(p => p.id === pickProductId);
+    if (!prod) return;
+    if (bundleItems.some(b => b.product_id === pickProductId)) return; // already added
+    setBundleItems([...bundleItems, { product_id: prod.id, title: prod.title, qty: 1 }]);
+    setPickProductId('');
+  };
+
+  const addCustomItem = () => {
+    const name = customItemName.trim();
+    if (!name) return;
+    setBundleItems([...bundleItems, { product_id: null, title: name, qty: 1 }]);
+    setCustomItemName('');
+  };
+
+  const updateBundleItem = (index: number, qty: number) => {
+    const next = [...bundleItems];
+    next[index] = { ...next[index], qty: Math.max(1, qty) };
+    setBundleItems(next);
+  };
+
+  const removeBundleItem = (index: number) => {
+    setBundleItems(bundleItems.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -261,6 +333,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
       shipping_info: shippingObj,
       compare_at_price: compareAtPrice === '' ? null : Number(compareAtPrice),
       cogs: cogs === '' ? null : Number(cogs),
+      same_day_dispatch: sameDayDispatch,
+
+      // Bundle / Set (perfume only)
+      set_type: setType,
+      bundle_items: setType ? bundleItems.map(b => ({
+        product_id: b.product_id,
+        title: b.title,
+        qty: b.qty,
+        custom: b.product_id === null,
+      })) : [],
 
       variants: variants.map(v => ({
         ...v,
@@ -549,6 +631,94 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
                   </div>
                 </div>
               </div>
+
+              {/* BUNDLE / SET BUILDER (Gift Sets only) */}
+              {setType && (
+                <div className="bg-white p-8 rounded-3xl border-2 border-[#c9a84c]/40 shadow-sm space-y-6">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Package size={16} className="text-[#c9a84c]" />
+                    <h3 className="font-bold text-secondary-900 uppercase tracking-widest text-[10px]">
+                      Gift Set Contents
+                    </h3>
+                  </div>
+
+                  <div className="flex items-start gap-3 p-4 rounded-2xl bg-[rgba(201,168,76,0.08)] border border-[#c9a84c]/20 text-[13px] leading-relaxed text-secondary-600">
+                    <Info size={16} className="text-[#c9a84c] shrink-0 mt-0.5" />
+                    <p>
+                      This is a <strong className="text-secondary-900">Gift Set</strong> — a set of items sold as one at the price you set in <em>Pricing & Variants</em> below.
+                      Add items that are already listed in the store, and/or custom items that exist only inside this set.
+                    </p>
+                  </div>
+
+                  {/* Added items list */}
+                  {bundleItems.length > 0 && (
+                    <div className="space-y-2">
+                      {bundleItems.map((item, index) => (
+                        <div key={index} className="flex items-center gap-3 bg-secondary-50 p-3 rounded-xl">
+                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${item.product_id ? 'bg-primary-100 text-primary-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {item.product_id ? 'Listed' : 'Custom'}
+                          </span>
+                          <span className="flex-1 text-sm font-bold text-secondary-800 truncate">{item.title}</span>
+                          <div className="flex items-center gap-1.5">
+                            <label className="text-[10px] font-bold uppercase text-secondary-400">Qty</label>
+                            <input
+                              type="number"
+                              min={1}
+                              value={item.qty}
+                              onChange={e => updateBundleItem(index, parseInt(e.target.value) || 1)}
+                              className="w-16 p-1.5 bg-white border border-secondary-200 rounded-lg text-sm font-bold text-center"
+                            />
+                          </div>
+                          <button type="button" onClick={() => removeBundleItem(index)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add listed item */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-secondary-600">Add a listed item</label>
+                    <div className="flex gap-2">
+                      <select
+                        value={pickProductId}
+                        onChange={e => setPickProductId(e.target.value)}
+                        className="flex-1 p-3 bg-secondary-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 font-medium outline-none"
+                      >
+                        <option value="">Select a product from the store…</option>
+                        {allProducts.map(p => (
+                          <option key={p.id} value={p.id}>{p.title}</option>
+                        ))}
+                      </select>
+                      <Button type="button" variant="outline" onClick={addBundleProduct} disabled={!pickProductId} className="rounded-2xl px-4">
+                        <Plus size={16} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Add custom item */}
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider mb-2 text-secondary-600">Add a custom item <span className="normal-case font-medium text-secondary-400">(not listed in store)</span></label>
+                    <div className="flex gap-2">
+                      <input
+                        value={customItemName}
+                        onChange={e => setCustomItemName(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomItem(); } }}
+                        placeholder="e.g., Travel atomizer, Branded gym towel…"
+                        className="flex-1 p-3 bg-secondary-50 border-none rounded-2xl focus:ring-2 focus:ring-primary-500 font-medium"
+                      />
+                      <Button type="button" variant="outline" onClick={addCustomItem} disabled={!customItemName.trim()} className="rounded-2xl px-4">
+                        <Plus size={16} />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {bundleItems.length === 0 && (
+                    <p className="text-xs text-secondary-400 italic">No items added yet — add at least one item to make up this set.</p>
+                  )}
+                </div>
+              )}
             </>
           )}
 
@@ -639,6 +809,22 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
               </Button>
             </div>
 
+            {/* Visual guard: how to price toys (play-time only) */}
+            {isToyShop && (
+              <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#f5f3fc] border border-[#e2ddf7] text-[13px] leading-relaxed text-[#5b5876]">
+                <Info size={16} className="text-[#8c7ef6] shrink-0 mt-0.5" />
+                <div className="space-y-1.5">
+                  <p className="font-bold text-[#23213d] text-xs uppercase tracking-wider">How to price a toy</p>
+                  <ul className="list-disc list-inside space-y-1 marker:text-[#8c7ef6]">
+                    <li><strong className="text-[#23213d]">One variant = one sellable option.</strong> Most toys need just a single "Single Unit (Standard)" variant. Add more only for colors or editions (e.g. "Neon Blue", "Deluxe").</li>
+                    <li><strong className="text-[#23213d]">Price</strong> is what the customer pays in GH₵ for that option. Must be above 0.</li>
+                    <li><strong className="text-[#23213d]">Deducts</strong> is usually <strong className="text-[#23213d]">1</strong> — how many units of stock one purchase removes. Only change it for multi-packs (e.g. a 2-pack deducts 2).</li>
+                    <li>Set <strong className="text-[#23213d]">Compare-At Price</strong> (sidebar) only to show a crossed-out "was" price. Leave empty for regular pricing.</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
               {variants.map((variant: any, index) => (
                 <div key={index} className="flex gap-4 items-end bg-secondary-50 p-4 rounded-2xl group transition-all hover:bg-white hover:ring-1 hover:ring-primary-500 hover:shadow-md">
@@ -698,7 +884,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
               <Star size={16} className="text-primary-600" />
               <h3 className="font-bold text-secondary-900 uppercase tracking-widest text-[10px]">Product Photo</h3>
             </div>
-            <ImageUpload value={image} onChange={setImage} onRemove={() => setImage('')} />
+            <ImageUpload value={image} onChange={setImage} onRemove={() => setImage('')} bucket={storeBuckets.products} />
             <p className="text-[10px] text-secondary-400 italic text-center px-4 leading-relaxed">
               Upload clear, high-resolution photography.
             </p>
@@ -729,6 +915,18 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, initialData }) =>
                   onChange={e => setCogs(e.target.value === '' ? '' : parseFloat(e.target.value))}
                   className="w-full p-2.5 bg-secondary-50 rounded-xl text-sm font-bold"
                 />
+              </div>
+              <div className="flex items-center gap-3 pt-2 border-t border-secondary-50">
+                <input
+                  type="checkbox"
+                  id="sameDayDispatch"
+                  checked={sameDayDispatch}
+                  onChange={e => setSameDayDispatch(e.target.checked)}
+                  className="w-5 h-5 text-primary-600 rounded-lg focus:ring-primary-500 border-secondary-300"
+                />
+                <label htmlFor="sameDayDispatch" className="font-bold text-secondary-900 cursor-pointer select-none text-xs uppercase tracking-wider">
+                  Same-Day Accra Dispatch
+                </label>
               </div>
             </div>
           )}

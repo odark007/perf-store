@@ -1,12 +1,35 @@
 import { cookies } from 'next/headers';
-import { getStoreOrNull, getStore, getTables, STORES, STORE_COOKIE } from './config';
+import {
+  getLockedStoreSlug,
+  getStore,
+  getTables,
+  resolveStoreSlug,
+  STORES,
+  STORE_COOKIE,
+} from './config';
 import type { StoreConfig } from './config';
 
-// Read the current store slug from the cookie set by the store layout/middleware.
-export async function getCurrentStoreSlug(): Promise<string> {
+/** Current tenant, or null when there is genuinely no store context. */
+export async function getCurrentStoreSlugOrNull(): Promise<string | null> {
+  const locked = getLockedStoreSlug();
+  if (locked) return locked;
+
   const cookieStore = await cookies();
-  const slug = cookieStore.get(STORE_COOKIE)?.value;
-  return slug && getStoreOrNull(slug) ? slug : 'derme';
+  return resolveStoreSlug(cookieStore.get(STORE_COOKIE)?.value);
+}
+
+/**
+ * Current tenant. Throws instead of silently defaulting to derme, so a request
+ * without a store can never read another tenant's data.
+ */
+export async function getCurrentStoreSlug(): Promise<string> {
+  const slug = await getCurrentStoreSlugOrNull();
+  if (!slug) {
+    throw new Error(
+      'No active store context. Visit a /<store> route or set STORE_SLUG for a locked deployment.'
+    );
+  }
+  return slug;
 }
 
 export async function getCurrentStore(): Promise<StoreConfig> {
@@ -17,5 +40,5 @@ export async function getCurrentTables() {
   return getTables(await getCurrentStoreSlug());
 }
 
-export { getStoreOrNull, getStore, getTables, STORES };
+export { getLockedStoreSlug, getStore, getTables, STORES, resolveStoreSlug };
 export type { StoreConfig };

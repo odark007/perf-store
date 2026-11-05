@@ -3,6 +3,17 @@
 @tailwind utilities;
 
 :root {
+  /* Default store palette (derme). Store layouts override these per tenant. */
+  --brand-deep: 26 10 46;
+  --brand-mid: 45 21 84;
+  --brand-light: 74 32 128;
+  --brand-gold: 201 168 76;
+  --brand-gold-light: 232 201 122;
+  --brand-gold-pale: 245 230 184;
+  --brand-cream: 253 248 240;
+  --brand-muted: 138 122 158;
+  --brand-subtle: 196 184 212;
+
   --purple-deep: #1a0a2e;
   --purple-mid: #2d1554;
   --purple-light: #4a2080;

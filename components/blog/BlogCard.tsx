@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { BlogPost } from '@/lib/types';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 interface Props {
   post: BlogPost;
@@ -13,7 +14,7 @@ interface Props {
 
 const BlogCard: React.FC<Props> = ({ post }) => {
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
   const date = new Date(post.published_at).toLocaleDateString('en-GB', {
     day: 'numeric',
     month: 'long',

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Lock } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/client';
-import { getTables } from '@/lib/stores/config';
+import { getTables, getPublicStoreSlug } from '@/lib/stores/config';
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -33,7 +33,8 @@ export default function UpdatePasswordPage() {
 
     // 2. Check Role for Redirection
     if (user) {
-      const t = getTables('derme');
+      const storeSlug = getPublicStoreSlug();
+      const t = getTables(storeSlug);
       const { data: profile } = await supabase
         .from(t.profiles)
         .select('role')
@@ -43,7 +44,7 @@ export default function UpdatePasswordPage() {
       if (profile?.role === 'super_admin' || profile?.role === 'store_manager') {
         router.replace('/admin');
       } else {
-        router.replace('/derme/shop');
+        router.replace(`/${storeSlug}/shop`);
       }
     }
   };

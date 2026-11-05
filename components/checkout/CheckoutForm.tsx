@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useCartStore } from '@/lib/store';
 import Button from '@/components/ui/Button';
 import { placeOrder } from '@/app/actions/checkout';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 // Ensure you have this import for notifications if you need to call it client side, 
 // though we moved it to server action in previous steps.
 
@@ -19,7 +20,7 @@ interface Props {
   storeSlug?: string;
 }
 
-const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneId, wantsDelivery, setWantsDelivery, storeSlug = 'derme' }) => {
+const CheckoutForm: React.FC<Props> = ({ zones, selectedZoneId, setSelectedZoneId, wantsDelivery, setWantsDelivery, storeSlug = getPublicStoreSlug() }) => {
   const router = useRouter();
   const { items, getSubtotal, clearCart } = useCartStore();
   const [isSubmitting, setIsSubmitting] = useState(false);

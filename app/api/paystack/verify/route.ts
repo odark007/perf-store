@@ -25,7 +25,11 @@ export async function POST(req: Request) {
     }
 
     const orderId = verifyData.data.metadata?.order_id;
-    const storeSlug = verifyData.data.metadata?.store_slug || 'derme';
+    const storeSlug = verifyData.data.metadata?.store_slug;
+
+    if (!storeSlug) {
+      return NextResponse.json({ error: 'Missing store metadata' }, { status: 400 });
+    }
 
     const store = getStoreOrNull(storeSlug);
     if (!store) {

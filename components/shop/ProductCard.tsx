@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Badge from '@/components/ui/Badge';
 import { useCartStore } from '@/lib/store';
 import { formatCurrency, getDiscountedPrice } from '@/lib/utils';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 // Interface for Variants passed from parent
 export interface UIProductVariant {
@@ -56,7 +57,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [localQuantity, setLocalQuantity] = useState(1);
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
 
   // 1. Get Cart
   const cartItems = useCartStore((state) => state.items);

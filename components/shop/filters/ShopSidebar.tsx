@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { X, SlidersHorizontal, ChevronDown, ChevronUp } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import FilterSection from './FilterSection';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 interface ShopSidebarProps {
   categories: { id: string; name: string; slug: string }[];
@@ -26,7 +27,7 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
   const router = useRouter();
   const searchParams = useSearchParams();
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
 
   // Local state for Price inputs
   const [minPrice, setMinPrice] = useState(searchParams.get('min') || '');
@@ -63,6 +64,12 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
   };
 
   const isSelected = (key: string, value: string) => searchParams.get(key) === value;
+
+  // Bundle/set categories get their own dedicated storefront pages, not shop filters.
+  const BUNDLE_CATEGORY_PAGES: Record<string, string> = {
+    'gift sets': `/${storeSlug}/specials/gift-sets`,
+  };
+  const isBundleCategory = (name: string) => name.trim().toLowerCase() in BUNDLE_CATEGORY_PAGES;
 
   return (
     <>
@@ -107,7 +114,7 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
         <div className="space-y-6">
           <FilterSection title="Categories">
             <div className="flex flex-col gap-3">
-              {categories.map((cat) => (
+              {categories.filter((cat) => !isBundleCategory(cat.name)).map((cat) => (
                 <button
                   key={cat.id}
                   onClick={() => updateFilter('category', isSelected('category', cat.slug) ? null : cat.slug)}
@@ -120,6 +127,24 @@ const ShopSidebar: React.FC<ShopSidebarProps> = ({
               ))}
             </div>
           </FilterSection>
+
+          {/* Specials: bundle/set categories → dedicated pages */}
+          {categories.some((cat) => isBundleCategory(cat.name)) && (
+            <FilterSection title="Specials">
+              <div className="flex flex-col gap-3">
+                {categories.filter((cat) => isBundleCategory(cat.name)).map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => { router.push(BUNDLE_CATEGORY_PAGES[cat.name.trim().toLowerCase()]); if (window.innerWidth < 768) onClose(); }}
+                    className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-brand-muted hover:text-brand-deep transition-all"
+                  >
+                    {cat.name}
+                    <span className="text-[9px] font-bold tracking-widest text-brand-gold">Set</span>
+                  </button>
+                ))}
+              </div>
+            </FilterSection>
+          )}
 
           {/* 2. Scent Family */}
           {scentFamilies.length > 0 && (

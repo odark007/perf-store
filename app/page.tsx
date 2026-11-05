@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import { STORES } from '@/lib/stores/config';
 import HeroScene from '@/components/portal/HeroScene';
 import ShopCard from '@/components/portal/ShopCard';
@@ -8,7 +9,7 @@ export const metadata = {
   description: 'Jarayelɔ — the Ga word meaning "merchant" or "trader". A welcoming home for our family of online shops.',
 };
 
-const SHOP_META: Record<string, { accent: 'gold' | 'purple'; icon: React.ReactNode }> = {
+const SHOP_META: Record<string, { accent: 'gold' | 'purple' | 'plum'; icon: React.ReactNode }> = {
   derme: {
     accent: 'gold',
     icon: (
@@ -32,6 +33,19 @@ const SHOP_META: Record<string, { accent: 'gold' | 'purple'; icon: React.ReactNo
         <path d="M8 8V6a4 4 0 0 1 8 0v2" stroke="currentColor" strokeWidth="1.5" />
         <circle cx="9" cy="13" r="1" fill="currentColor" />
         <circle cx="15" cy="13" r="1" fill="currentColor" />
+      </svg>
+    ),
+  },
+  'royal-perfume-hub': {
+    accent: 'plum',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+        <path
+          d="M12 2.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.5L12 14.9 7 17.7l1.1-5.5L4 8.3l5.6-.7L12 2.5z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -64,9 +78,14 @@ export default function PortalPage() {
       {/* ---------- NAV ---------- */}
       <header className="relative z-[3] flex items-center justify-between px-[6vw] pt-[26px] max-[860px]:px-[5vw] max-[860px]:pt-5">
         <div className="flex items-center gap-3">
-          <span className="w-[38px] h-[38px] rounded-[11px] flex items-center justify-center font-portal-display font-black text-[19px] text-white bg-gradient-to-br from-[#FF6B4A] to-[#FFB627] shadow-[0_8px_18px_-6px_rgba(255,107,74,0.55)]">
-            J
-          </span>
+          <Image
+            src="/Jarayel-Technologies-logo.png"
+            alt="Jarayel Technologies logo"
+            width={38}
+            height={38}
+            className="w-[38px] h-[38px] rounded-[11px] object-contain"
+            priority
+          />
           <div className="flex flex-col leading-[1.15]">
             <span className="font-bold text-[15px]">Jarayel Technologies</span>
             <span className="text-[11px] tracking-[0.08em] uppercase text-[#5B5468] max-[520px]:hidden">Commerce Platform</span>
@@ -119,7 +138,9 @@ export default function PortalPage() {
         <section id="shops" className="relative z-[3] px-[6vw] pt-5 pb-[90px] max-[860px]:px-[5vw] max-[860px]:pt-2.5 max-[860px]:pb-[60px]">
           <div className="mb-10">
             <h2 className="font-portal-display font-black text-[clamp(1.8rem,3.4vw,2.6rem)] mb-2">Open for trade</h2>
-            <p className="text-[#5B5468] text-base">Two storefronts, curated with care. More are on the way.</p>
+            <p className="text-[#5B5468] text-base">
+              {stores.length} storefront{stores.length === 1 ? '' : 's'}, curated with care. More are on the way.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-[26px] max-[860px]:grid-cols-1">

@@ -2,8 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { CheckCircle, MessageCircle, Home } from 'lucide-react';
 import Button from '@/components/ui/Button';
-import { createClient } from '@/lib/supabase/server';
-import { getTables } from '@/lib/stores/config';
+import { createClient as createAdminClient } from '@supabase/supabase-js';
+import { getTables, getStoreOrNull } from '@/lib/stores/config';
 import PurchaseTracker from '@/components/checkout/PurchaseTracker';
 
 // Next.js 15: Params are a Promise
@@ -15,9 +15,16 @@ export default async function SuccessPage({ params }: SuccessPageProps) {
   // Await the params before accessing properties
   const resolvedParams = await params;
   const { id, store: storeSlug } = resolvedParams;
+  const store = getStoreOrNull(storeSlug);
   const t = getTables(storeSlug);
 
-  const supabase = await createClient();
+  // Order confirmation is a capability URL (UUID). Read it with the service
+  // role so guest orders stay visible without exposing all orders to anon.
+  const supabase = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
 
   // Fetch minimal order details
   const { data: order, error } = await supabase
@@ -67,7 +74,7 @@ export default async function SuccessPage({ params }: SuccessPageProps) {
             </p>
             <div className="bg-white p-3 rounded border border-yellow-200 mb-4 font-mono text-center">
               MTN MoMo: 024 XXX XXXX <br />
-              (LiquorShop Ghana)
+              ({store?.name || storeSlug})
             </div>
             <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
               <Button fullWidth size="lg" className="bg-[#25D366] hover:bg-[#20BA5A] border-none text-white">

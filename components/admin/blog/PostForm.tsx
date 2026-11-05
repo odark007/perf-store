@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/admin/input/ImageUpload';
 import RichTextEditor from './RichTextEditor';
 import { createPost, updatePost } from '@/app/actions/blog';
+import { getPublicStoreSlug, getStoreBuckets } from '@/lib/stores/config';
 
 interface Props {
   initialData?: any;
@@ -15,7 +16,8 @@ interface Props {
 const PostForm: React.FC<Props> = ({ initialData }) => {
   const router = useRouter();
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
+  const storeBuckets = getStoreBuckets(storeSlug);
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
 
@@ -129,7 +131,7 @@ const PostForm: React.FC<Props> = ({ initialData }) => {
               onChange={setImage}
               onRemove={() => setImage('')}
               folder="blog"
-              bucket="blog-images-perfume-store"
+              bucket={storeBuckets.blog}
             />
           </div>
         </div>

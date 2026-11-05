@@ -9,7 +9,7 @@ import Button from '@/components/ui/Button';
 import { formatCurrency } from '@/lib/utils';
 
 export const metadata = {
-  title: 'My Orders | LiquorShop',
+  title: 'My Orders',
 };
 
 export default async function OrderHistoryPage({ params }: { params: Promise<{ store: string }> }) {

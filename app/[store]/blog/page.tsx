@@ -1,21 +1,26 @@
 import React from 'react';
 import { createClient } from '@/lib/supabase/server';
-import { getTables } from '@/lib/stores/config';
+import { getTables, getStoreOrNull } from '@/lib/stores/config';
 import BlogCard from '@/components/blog/BlogCard';
 import BlogToolbar from '@/components/blog/BlogToolbar';
 import Pagination from '@/components/ui/Pagination';
 import { SearchX } from 'lucide-react';
-
-export const metadata = {
-  title: 'Blog | LiquorShop Ghana',
-  description: 'Latest news, cocktail recipes, and events from LiquorShop.',
-};
 
 export const dynamic = 'force-dynamic'; // Ensure fresh search results
 
 interface PageProps {
   params: Promise<{ store: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const store = getStoreOrNull(storeSlug);
+  if (!store) return { title: 'Blog' };
+  return {
+    title: `Blog | ${store.name}`,
+    description: `Latest stories, scent guides, and updates from ${store.name}.`,
+  };
 }
 
 export default async function BlogListingPage(props: PageProps) {
@@ -62,7 +67,7 @@ export default async function BlogListingPage(props: PageProps) {
       <div className="text-center max-w-2xl mx-auto mb-10">
         <h1 className="text-4xl font-display font-bold text-secondary-900 mb-4">The Cellar Blog</h1>
         <p className="text-lg text-secondary-600">
-          Discover cocktail recipes, wine guides, and the latest stories.
+          Discover scent guides, gifting ideas, and the latest stories.
         </p>
       </div>
 

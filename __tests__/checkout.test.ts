@@ -145,33 +145,75 @@ jest.mock('@/lib/supabase/server', () => ({
     }),
 }));
 
-// 2. Mock Supabase Client (for webhook)
+// 2. Mock Supabase Client (checkout service-role writes + webhook)
 jest.mock('@supabase/supabase-js', () => ({
     createClient: jest.fn().mockReturnValue({
-        from: jest.fn().mockReturnValue({
-            update: jest.fn().mockReturnThis(),
-            eq: jest.fn().mockReturnThis(),
-            insert: jest.fn().mockResolvedValue({ data: null, error: null }),
-            // .select('id') resolves the update result (array of updated rows)
-            select: jest.fn().mockImplementation((cols: string) =>
-                cols === 'id'
-                    ? Promise.resolve({ data: [{ id: 'order-123' }], error: null })
-                    : ({
-                        eq: jest.fn().mockReturnThis(),
-                        single: jest.fn().mockResolvedValue({
-                            data: {
-                                order_number: 'ORD-webhook',
-                                notes: 'Customer Name - Notes',
-                                total_amount: 500,
-                                user_phone: '123',
-                                user_email: 'test@test.com'
-                            },
+        from: jest.fn().mockImplementation((table: string) => {
+            let inserted = false;
+
+            const chain: any = {
+                select: jest.fn().mockImplementation((cols?: string) => {
+                    // Webhook uses update(...).eq(...).eq(...).select('id')
+                    if (cols === 'id') {
+                        return Promise.resolve({ data: [{ id: 'order-123' }], error: null });
+                    }
+                    return chain;
+                }),
+                insert: jest.fn().mockImplementation(() => {
+                    inserted = true;
+                    return chain;
+                }),
+                update: jest.fn().mockReturnThis(),
+                eq: jest.fn().mockReturnThis(),
+                in: jest.fn().mockReturnThis(),
+                single: jest.fn().mockImplementation(() => {
+                    if (table === 'store_settings_perfume_store') {
+                        return { data: { bulk_threshold: 10, bulk_surcharge: 5 }, error: null };
+                    }
+                    if (table === 'delivery_zones_perfume_store') {
+                        return { data: { base_price: 10 }, error: null };
+                    }
+                    if (table === 'orders_perfume_store') {
+                        return {
+                            data: inserted
+                                ? { id: 'order-123', order_number: 'ORD-001' }
+                                : {
+                                    order_number: 'ORD-webhook',
+                                    notes: 'Customer Name - Notes',
+                                    total_amount: 500,
+                                    tax_amount: 0,
+                                    delivery_fee: 0,
+                                    user_phone: '123',
+                                    user_email: 'test@test.com'
+                                },
                             error: null
-                        })
-                    })
-            )
-        })
-    })
+                        };
+                    }
+                    return { data: null, error: null };
+                }),
+            };
+
+            // Default thenable responses by table.
+            let responseData: any = [];
+            if (table === 'product_variants_perfume_store') {
+                responseData = [{
+                    id: 'variant-1',
+                    stock_deduction: 1,
+                    master_stock_id: 'master-1',
+                    price: 100,
+                    inventory: { id: 'master-1', current_stock_level: 100 },
+                    product: { is_featured: false, discount_percent: 0 }
+                }];
+            } else if (table === 'delivery_zones_perfume_store') {
+                responseData = { base_price: 10 };
+            } else if (table === 'store_settings_perfume_store') {
+                responseData = { bulk_threshold: 10, bulk_surcharge: 5 };
+            }
+
+            chain.then = (resolve: any) => Promise.resolve({ data: responseData, error: null }).then(resolve);
+            return chain;
+        }),
+    }),
 }));
 
 // 3. Mock Notification Service
@@ -259,11 +301,11 @@ describe('Notification System Tests', () => {
             order_number: 'ORD-001',
             customer_name: 'Test Customer',
             user_email: 'test@example.com'
-        }));
+        }), 'derme');
         expect(castNotification).toHaveBeenCalledWith('new_order_customer', expect.objectContaining({
             order_number: 'ORD-001',
             customer_name: 'Test Customer'
-        }));
+        }), 'derme');
     });
 
     test('checkout.ts: placeOrder() does NOT send notifications for paystack at checkout', async () => {
@@ -298,7 +340,7 @@ describe('Notification System Tests', () => {
         const body = JSON.stringify({
             event: 'charge.success',
             data: {
-                metadata: { order_id: 'order-123' },
+                metadata: { order_id: 'order-123', store_slug: 'derme' },
                 reference: 'ref-123'
             }
         });

@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
-import { getCurrentTables } from '@/lib/stores/context';
+import { getCurrentStore, getCurrentTables } from '@/lib/stores/context';
 
 interface VariantInput {
   id?: string;
@@ -11,6 +11,15 @@ interface VariantInput {
   price: number;
   stock_deduction: number;
   sku?: string;
+}
+
+// A single item inside a bundle/set. Either a reference to a listed product
+// (product_id) or a custom item that exists only within the set (custom: true).
+interface BundleItem {
+  product_id?: string | null;
+  title: string;
+  qty: number;
+  custom?: boolean;
 }
 
 interface ProductInput {
@@ -40,6 +49,10 @@ interface ProductInput {
   gender?: string;
   occasion?: string[];
 
+  // Bundle / Set (Gift Sets) — perfume store
+  set_type?: 'gift-set' | null;
+  bundle_items?: BundleItem[];
+
   // Toy Attributes
   age_rating?: string;
   mfr_part?: string;
@@ -49,6 +62,7 @@ interface ProductInput {
   compare_at_price?: number | null;
   cogs?: number | null;
   gallery?: string[];
+  same_day_dispatch?: boolean;
 }
 
 // Helper to sanitize promotion data
@@ -114,6 +128,9 @@ export async function createProduct(input: ProductInput) {
         sillage: input.sillage,
         gender: input.gender,
         occasion: input.occasion,
+        // Bundle / Set
+        set_type: input.set_type || null,
+        bundle_items: input.set_type ? (input.bundle_items || []) : [],
         // Toy fields
         age_rating: input.age_rating,
         mfr_part: input.mfr_part,
@@ -122,7 +139,8 @@ export async function createProduct(input: ProductInput) {
         shipping_info: input.shipping_info,
         compare_at_price: input.compare_at_price,
         cogs: input.cogs,
-        gallery: input.gallery
+        gallery: input.gallery,
+        same_day_dispatch: input.same_day_dispatch ?? false
       })
       .select()
       .single();
@@ -157,6 +175,7 @@ export async function createProduct(input: ProductInput) {
 export async function updateProduct(productId: string, input: Omit<ProductInput, 'initial_stock' | 'threshold'>) {
   const supabase = await createClient();
   const t = await getCurrentTables();
+  const storeBuckets = (await getCurrentStore()).buckets;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: 'Unauthorized' };
 
@@ -175,9 +194,9 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
     // Image Cleanup Logic...
     const { data: oldProduct } = await supabase.from(t.products).select('base_image_url').eq('id', productId).single();
     if (oldProduct && oldProduct.base_image_url !== input.base_image_url) {
-      if (oldProduct.base_image_url.includes('product-images-perfume-store')) {
-        const oldPath = oldProduct.base_image_url.split('/product-images/')[1];
-        if (oldPath) await supabase.storage.from('product-images-perfume-store').remove([oldPath]);
+      if (oldProduct.base_image_url.includes(storeBuckets.products)) {
+        const oldPath = oldProduct.base_image_url.split(`/${storeBuckets.products}/`)[1];
+        if (oldPath) await supabase.storage.from(storeBuckets.products).remove([oldPath]);
       }
     }
 
@@ -203,6 +222,9 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
       sillage: input.sillage,
       gender: input.gender,
       occasion: input.occasion,
+      // Bundle / Set
+      set_type: input.set_type || null,
+      bundle_items: input.set_type ? (input.bundle_items || []) : [],
       // Toy fields
       age_rating: input.age_rating,
       mfr_part: input.mfr_part,
@@ -211,7 +233,8 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
       shipping_info: input.shipping_info,
       compare_at_price: input.compare_at_price,
       cogs: input.cogs,
-      gallery: input.gallery
+      gallery: input.gallery,
+      same_day_dispatch: input.same_day_dispatch ?? false
     }).eq('id', productId);
 
     // Update Inventory Name

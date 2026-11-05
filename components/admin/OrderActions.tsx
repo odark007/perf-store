@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { Loader2, Save } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 interface OrderActionsProps {
   order: any;
@@ -11,6 +12,8 @@ interface OrderActionsProps {
 
 const OrderActions: React.FC<OrderActionsProps> = ({ order }) => {
   const router = useRouter();
+  const params = useParams<{ store?: string }>();
+  const storeSlug = getPublicStoreSlug(params?.store);
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(order.payment_status);
   const [deliveryStatus, setDeliveryStatus] = useState(order.delivery_status);
@@ -26,7 +29,8 @@ const OrderActions: React.FC<OrderActionsProps> = ({ order }) => {
           orderNumber: order.order_number,
           phone: order.user_phone,
           field,
-          value
+          value,
+          storeSlug
         }),
       });
 

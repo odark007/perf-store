@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import CheckoutForm from './CheckoutForm';
 import CheckoutSummary from './CheckoutSummary';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 interface Props {
   settings: any;
@@ -11,7 +12,7 @@ interface Props {
   storeSlug?: string;
 }
 
-const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes, storeSlug = 'derme' }) => {
+const CheckoutClientWrapper: React.FC<Props> = ({ settings, zones, taxes, storeSlug = getPublicStoreSlug() }) => {
   // State to sync Form selection with Summary calculation
   const [selectedZoneId, setSelectedZoneId] = useState<string>('');
   const [wantsDelivery, setWantsDelivery] = useState(true);

@@ -2,50 +2,52 @@
 
 ## The rule
 
-Every named Supabase resource in this project **must** end with `_perfume_store`.
+Every named Supabase resource is namespaced by **store**. The suffix is the
+store's `tableSuffix` from `lib/stores/config.ts`.
 
-This applies to all of the following resource types:
+| Store | Slug | Suffix |
+|---|---|---|
+| The Perfume Store Ghana | `derme` | `_perfume_store` |
+| Tomorrow's Playground | `play-time` | `_toy_shop` |
+| Royal Perfume Hub | `royal-perfume-hub` | `_royal_perfume_hub` |
+
+This applies to:
 
 ### Database tables
 
-All tables must end with `_perfume_store`.
-
 Examples:
 
-
-- `sms_templates_perfume_store`
+- `products_perfume_store`
+- `products_toy_shop`
+- `products_royal_perfume_hub`
 - `sms_logs_perfume_store`
-- `email_templates_perfume_store`
-- `email_logs_perfume_store`
+- `orders_toy_shop`
 
 ### Storage buckets
 
-All storage buckets must end with `_perfume_store`.
-
 Examples:
 
-- `student-documents_perfume_store`
-- `profile-pics_perfume_store`
-- `school-logos_perfume_store`
+- `product-images-perfume-store`
+- `product-images-toy-shop`
+- `product-images-royal-perfume-hub`
 
 ### Edge functions
-
-All edge functions must end with `_perfume_store`.
 
 Examples:
 
 - `send-welcome-email_perfume_store`
-- `process-payment_webhook_perfume_store`
-- `generate-report_perfume_store`
+- `generate-report_toy_shop`
+- `process-payment_webhook_royal_perfume_hub`
 
-## Never reference resources without `_perfume_store`
+## Isolation rules
 
-The application must never `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `JOIN` with, access, or
-in any way interact with a resource that does **not** contain `_perfume_store` in its name.
-
-The only exception is `auth.users`, which is accessed **exclusively** through the Supabase
-Auth Admin API (`supabaseAdmin.auth.admin.listUsers`, `deleteUser`, etc.) — never via a
-`from('auth.users')` query.
-
-Before writing any migration, query, edge function, or storage rule, always confirm the
-resource name contains `_perfume_store`.
+1. A request for one store must never `SELECT`, `INSERT`, `UPDATE`, `DELETE`,
+   join with, or otherwise access another store's suffix.
+2. The suffix is derived from `getTables(storeSlug)`. Do not build table names by
+   string concatenation in feature code.
+3. `getStore()` throws for unknown slugs. There is no silent fallback to derme.
+4. Tenant resolution is server-side: the `jarayel_store` cookie (multi-store
+   deployment) or the `STORE_SLUG` environment variable (locked deployment).
+5. Auth is shared at the `auth.users` level, but profiles and roles are per store.
+   Every store-scoped write must verify that the acting user has a role in that
+   store.

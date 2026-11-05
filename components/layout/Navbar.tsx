@@ -13,29 +13,35 @@ import {
   Heart,
   Sparkles,
   Bot,
-  Gamepad2
+  Gamepad2,
+  ChevronDown
 } from 'lucide-react';
 import Badge from '@/components/ui/Badge';
 import { useCartStore } from '@/lib/store';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { getStoreOrNull, STORES, DEFAULT_STORE_SLUG } from '@/lib/stores/config';
 
 interface NavbarProps {
   storeSlug?: string;
 }
 
-const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
+const Navbar = ({ storeSlug = DEFAULT_STORE_SLUG }: NavbarProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const [isSpecialsOpen, setIsSpecialsOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const isToyShop = storeSlug === 'play-time';
+  // Validate the prop so a bad value can never leak another tenant's links.
+  const store = getStoreOrNull(storeSlug) ?? STORES[DEFAULT_STORE_SLUG];
+  storeSlug = store.slug;
+  const isToyShop = store.isToy;
 
   // FIX: Select specific state pieces to trigger re-renders correctly
   const items = useCartStore((state) => state.items);
@@ -93,8 +99,12 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
     { label: "Men's", href: `/${storeSlug}/shop?category=mens` },
     { label: "Women's", href: `/${storeSlug}/shop?category=womens` },
     { label: 'Unisex & Niche', href: `/${storeSlug}/shop?category=unisex` },
-    { label: 'Gift Sets', href: `/${storeSlug}/shop?category=gift-sets` },
     { label: 'Body Mists', href: `/${storeSlug}/shop?category=body-mists` },
+  ];
+
+  // "Specials" dropdown (perfume only): bundles/sets live here
+  const specialsLinks = [
+    { label: 'Gift Sets', href: `/${storeSlug}/specials/gift-sets` },
   ];
 
   const toyNavLinks = [
@@ -133,10 +143,10 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-lg leading-tight text-[#23213d] tracking-tight font-display">
-                Tomorrow&apos;s Playground
+                {store.shortName}
               </span>
               <span className="text-[10px] uppercase tracking-[0.2em] text-[#8c7ef6] font-semibold font-mono">
-                RC & Robotics
+                {store.navTagline}
               </span>
             </div>
           </Link>
@@ -310,20 +320,20 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
   // PERFUME STORE NAVBAR (Original luxury style)
   // =========================================================================
   return (
-    <header className={`sticky top-0 z-[var(--z-sticky)] bg-[#1a0a2e]/92 backdrop-blur-xl border-b border-[rgba(201,168,76,0.25)] transition-transform duration-300 h-[72px] ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+    <header className={`sticky top-0 z-[var(--z-sticky)] bg-brand-deep/[0.92] backdrop-blur-xl border-b border-brand-border transition-transform duration-300 h-[72px] ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="container-custom h-full flex items-center justify-between">
 
         {/* 1. Logo */}
-        <Link href={`/${storeSlug}`} className="flex items-center gap-3 z-20 group">
-          <div className="w-10 h-10 bg-gradient-to-br from-[#c9a84c] to-[#e8c97a] rounded-full flex items-center justify-center shadow-lg shadow-gold/20 transition-transform group-hover:scale-105">
-            <span className="font-display font-bold text-[#1a0a2e] text-xl">P</span>
+        <Link href={`/${storeSlug}`} className="flex items-center gap-3 z-20 group min-w-0">
+          <div className="w-10 h-10 shrink-0 bg-gradient-to-br from-brand-gold to-brand-gold-light rounded-full flex items-center justify-center shadow-lg shadow-brand-gold/20 transition-transform group-hover:scale-105">
+            <span className="font-display font-bold text-brand-deep text-xl">{store.monogram}</span>
           </div>
-          <div className="flex flex-col">
-            <span className="font-display font-bold text-lg md:text-xl leading-none text-[#c9a84c] tracking-tight uppercase">
-              The Perfume Store
+          <div className="flex flex-col min-w-0">
+            <span className="font-display font-bold text-lg md:text-xl leading-none text-brand-gold tracking-tight uppercase truncate">
+              {store.shortName}
             </span>
-            <span className="text-[10px] uppercase tracking-[0.3em] text-gold-pale/60 font-medium font-body mt-0.5">
-              Ghana
+            <span className="text-[10px] uppercase tracking-[0.3em] text-brand-gold-pale/60 font-medium font-body mt-0.5 truncate">
+              {store.navTagline}
             </span>
           </div>
         </Link>
@@ -334,19 +344,52 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
             <Link
               key={link.label}
               href={link.href}
-              className={`text-[12px] font-medium tracking-[0.15em] uppercase font-body transition-colors duration-200 ${isActive(link.href) ? 'text-[#c9a84c]' : 'text-[#c4b8d4] hover:text-[#c9a84c]'
+              className={`text-[12px] font-medium tracking-[0.15em] uppercase font-body transition-colors duration-200 ${isActive(link.href) ? 'text-brand-gold' : 'text-brand-subtle hover:text-brand-gold'
                 }`}
             >
               {link.label}
             </Link>
           ))}
+
+          {/* Specials dropdown (perfume store only) */}
+          <div
+            className="relative"
+            onMouseEnter={() => setIsSpecialsOpen(true)}
+            onMouseLeave={() => setIsSpecialsOpen(false)}
+          >
+            <button
+              className={`flex items-center gap-1 text-[12px] font-medium tracking-[0.15em] uppercase font-body transition-colors duration-200 ${
+                pathname.includes('/specials') ? 'text-brand-gold' : 'text-brand-subtle hover:text-brand-gold'
+              }`}
+            >
+              Specials
+              <ChevronDown size={14} className={`transition-transform duration-200 ${isSpecialsOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isSpecialsOpen && (
+              <div className="absolute left-1/2 -translate-x-1/2 top-full pt-3 z-40">
+                <div className="w-48 bg-brand-mid rounded-xl shadow-2xl border border-brand-border py-2 animate-scale-in">
+                  {specialsLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className="flex items-center justify-between px-5 py-3 text-[11px] font-medium uppercase tracking-[0.15em] text-brand-subtle hover:text-brand-gold hover:bg-brand-deep/40 transition-all"
+                      onClick={() => setIsSpecialsOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* 3. Actions */}
         <div className="flex items-center gap-2 md:gap-3 z-20">
 
           {/* Wishlist Link */}
-          <Link href={`/${storeSlug}/wishlist`} className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors">
+          <Link href={`/${storeSlug}/wishlist`} className="p-2 text-brand-subtle hover:text-brand-gold transition-colors">
             <Heart size={22} />
           </Link>
 
@@ -355,13 +398,13 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
             {user ? (
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors"
+                className="p-2 text-brand-subtle hover:text-brand-gold transition-colors"
                 aria-label="User menu"
               >
                 <User size={22} />
               </button>
             ) : (
-              <Link href="/auth/login" className="p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors text-sm font-medium flex items-center gap-2">
+              <Link href="/auth/login" className="p-2 text-brand-subtle hover:text-brand-gold transition-colors text-sm font-medium flex items-center gap-2">
                 <User size={20} />
                 <span className="hidden lg:inline uppercase tracking-wider text-[11px]">Login</span>
               </Link>
@@ -372,16 +415,16 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
             )}
 
             {isUserMenuOpen && user && (
-              <div className="absolute right-0 mt-3 w-64 bg-[#2d1554] rounded-xl shadow-2xl border border-[rgba(201,168,76,0.2)] py-2 animate-scale-in origin-top-right z-40">
-                <div className="px-5 py-4 border-b border-[rgba(201,168,76,0.1)]">
-                  <p className="text-[10px] text-gold-pale/50 font-bold uppercase tracking-widest mb-1">Authenticated</p>
+              <div className="absolute right-0 mt-3 w-64 bg-brand-mid rounded-xl shadow-2xl border border-brand-border py-2 animate-scale-in origin-top-right z-40">
+                <div className="px-5 py-4 border-b border-brand-border">
+                  <p className="text-[10px] text-brand-gold-pale/50 font-bold uppercase tracking-widest mb-1">Authenticated</p>
                   <p className="text-sm font-semibold text-white truncate">{user.email}</p>
                 </div>
 
                 <div className="py-2">
                   <Link
                     href={`/${storeSlug}/account/history`}
-                    className="flex items-center gap-3 px-5 py-3 text-sm text-[#c4b8d4] hover:text-[#c9a84c] hover:bg-[#1a0a2e]/40 transition-all font-medium"
+                    className="flex items-center gap-3 px-5 py-3 text-sm text-brand-subtle hover:text-brand-gold hover:bg-brand-deep/40 transition-all font-medium"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
                     <Clock size={16} />
@@ -390,7 +433,7 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
                   {user.role === 'store_manager' && (
                     <Link
                       href="/admin"
-                      className="flex items-center gap-3 px-5 py-3 text-sm text-[#c4b8d4] hover:text-[#c9a84c] hover:bg-[#1a0a2e]/40 transition-all font-medium"
+                      className="flex items-center gap-3 px-5 py-3 text-sm text-brand-subtle hover:text-brand-gold hover:bg-brand-deep/40 transition-all font-medium"
                       onClick={() => setIsUserMenuOpen(false)}
                     >
                       <Sparkles size={16} />
@@ -399,7 +442,7 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
                   )}
                 </div>
 
-                <div className="border-t border-[rgba(201,168,76,0.1)] pt-2">
+                <div className="border-t border-brand-border pt-2">
                   <button
                     onClick={handleSignOut}
                     className="w-full flex items-center gap-3 px-5 py-3 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-all font-medium text-left"
@@ -415,13 +458,13 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
           {/* Cart Icon */}
           <button
             onClick={toggleCart}
-            className="relative p-2 text-[#c4b8d4] hover:text-[#c9a84c] transition-colors group"
+            className="relative p-2 text-brand-subtle hover:text-brand-gold transition-colors group"
             aria-label="Toggle cart"
           >
             <ShoppingCart size={22} />
             {cartItemCount > 0 ? (
               <span className="absolute -top-1 -right-1">
-                <Badge variant="danger" size="sm" className="px-1.5 h-5 min-w-[20px] shadow-lg border-[#1a0a2e] border-2 bg-[#c9a84c] text-[#1a0a2e]">
+                <Badge variant="danger" size="sm" className="px-1.5 h-5 min-w-[20px] shadow-lg border-brand-deep border-2 bg-brand-gold text-brand-deep">
                   {cartItemCount}
                 </Badge>
               </span>
@@ -430,7 +473,7 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
 
           {/* Mobile Menu Toggle */}
           <button
-            className="lg:hidden p-2 text-[#c9a84c]"
+            className="lg:hidden p-2 text-brand-gold"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -440,13 +483,13 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
 
       {/* 4. Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="absolute top-[72px] left-0 w-full bg-[#1a0a2e] border-b border-[rgba(201,168,76,0.25)] shadow-2xl lg:hidden animate-slide-down h-[calc(100vh-4.5rem)] overflow-y-auto z-40">
+        <div className="absolute top-[72px] left-0 w-full bg-brand-deep border-b border-brand-border shadow-2xl lg:hidden animate-slide-down h-[calc(100vh-4.5rem)] overflow-y-auto z-40">
           <nav className="p-4 space-y-2">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className={`flex items-center gap-4 p-4 rounded-xl font-medium transition-all ${isActive(link.href) ? 'bg-[#2d1554] text-[#c9a84c]' : 'text-[#c4b8d4]'
+                className={`flex items-center gap-4 p-4 rounded-xl font-medium transition-all ${isActive(link.href) ? 'bg-brand-mid text-brand-gold' : 'text-brand-subtle'
                   }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -454,14 +497,29 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
               </Link>
             ))}
 
-            <div className="h-px bg-[rgba(201,168,76,0.1)] my-4" />
+            {/* Specials (perfume store only) */}
+            <div className="pt-1">
+              <p className="px-4 pb-1 text-[10px] font-bold uppercase tracking-[0.25em] text-brand-gold-pale/50">Specials</p>
+              {specialsLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className="flex items-center gap-4 p-4 rounded-xl font-medium text-brand-subtle transition-all hover:bg-brand-mid"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <span className="uppercase tracking-[0.2em] text-xs">{link.label}</span>
+                </Link>
+              ))}
+            </div>
+
+            <div className="h-px bg-brand-border my-4" />
 
             {user ? (
-              <div className="p-4 bg-[#2d1554] rounded-2xl border border-[rgba(201,168,76,0.1)]">
-                <p className="text-[10px] text-gold-pale/50 font-bold uppercase tracking-widest mb-1">Welcome</p>
+              <div className="p-4 bg-brand-mid rounded-2xl border border-brand-border">
+                <p className="text-[10px] text-brand-gold-pale/50 font-bold uppercase tracking-widest mb-1">Welcome</p>
                 <p className="text-sm font-semibold text-white mb-4">{user.email}</p>
                 <div className="grid grid-cols-2 gap-3">
-                  <Link href={`/${storeSlug}/account/history`} className="flex items-center justify-center gap-2 p-3 bg-[#1a0a2e] rounded-lg text-[#c4b8d4]" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link href={`/${storeSlug}/account/history`} className="flex items-center justify-center gap-2 p-3 bg-brand-deep rounded-lg text-brand-subtle" onClick={() => setIsMobileMenuOpen(false)}>
                     <Clock size={16} /> <span className="text-[10px] font-bold uppercase">History</span>
                   </Link>
                   <button onClick={handleSignOut} className="flex items-center justify-center gap-2 p-3 bg-red-900/10 rounded-lg text-red-400">
@@ -472,7 +530,7 @@ const Navbar = ({ storeSlug = 'derme' }: NavbarProps) => {
             ) : (
               <Link
                 href="/auth/login"
-                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-[#c9a84c] to-[#e8c97a] text-[#1a0a2e] rounded-xl font-bold uppercase tracking-widest text-xs"
+                className="flex items-center justify-center gap-3 p-4 bg-gradient-to-r from-brand-gold to-brand-gold-light text-brand-deep rounded-xl font-bold uppercase tracking-widest text-xs"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <User size={18} />

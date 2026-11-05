@@ -3,7 +3,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/shop/CartDrawer';
 import { createClient } from '@/lib/supabase/server';
-import { getStoreOrNull, getTables } from '@/lib/stores/config';
+import { getStoreOrNull, getTables, getStoreThemeVars } from '@/lib/stores/config';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -31,13 +31,17 @@ export default async function StoreLayout({
     .single();
 
   return (
-    <>
+    <div
+      className="flex flex-1 flex-col bg-brand-cream text-brand-deep"
+      style={getStoreThemeVars(store.theme) as React.CSSProperties}
+      data-store={store.slug}
+    >
       <CartDrawer storeSlug={storeSlug} />
       <Navbar storeSlug={storeSlug} />
       <main className="flex-1">
         {children}
       </main>
       <Footer settings={settings} storeSlug={storeSlug} />
-    </>
+    </div>
   );
 }

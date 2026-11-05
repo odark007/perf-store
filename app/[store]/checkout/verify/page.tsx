@@ -3,6 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 // NOTE: We removed 'createClient' import because we now call the API instead
 
@@ -10,7 +11,7 @@ function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const params = useParams();
-  const storeSlug = (params?.store as string) || 'derme';
+  const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
   const orderId = searchParams.get('orderId');
   const reference = searchParams.get('reference'); // Paystack sends this
   const [status, setStatus] = useState('Verifying payment...');

@@ -4,7 +4,20 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient as createAdminClient } from '@supabase/supabase-js'; // Renamed to avoid conflict
-import { getCurrentTables } from '@/lib/stores/context';
+import { getCurrentStoreSlugOrNull } from '@/lib/stores/context';
+import { DEFAULT_STORE_SLUG, getLockedStoreSlug, getTables, resolveStoreSlug } from '@/lib/stores/config';
+
+// Auth pages live outside /[store], so the tenant comes from the submitted
+// hidden field, the store cookie set by middleware, or the locked deployment env.
+async function resolveAuthStoreSlug(formData?: FormData): Promise<string> {
+  const submitted = formData?.get('storeSlug');
+  return (
+    resolveStoreSlug(typeof submitted === 'string' ? submitted : null) ??
+    (await getCurrentStoreSlugOrNull()) ??
+    getLockedStoreSlug() ??
+    DEFAULT_STORE_SLUG
+  );
+}
 
 // Helper to create client (Standard SSR Client for Cookies)
 const createSSRClient = async () => {
@@ -43,11 +56,12 @@ export async function loginAction(formData: FormData) {
     return { error: error.message };
   }
 
-  // 2. Check User Role for Redirect
+  // 2. Check User Role for Redirect (scoped to the store they signed in from)
   const { data: { user } } = await supabase.auth.getUser();
+  const storeSlug = await resolveAuthStoreSlug(formData);
+  const t = getTables(storeSlug);
 
   if (user) {
-    const t = await getCurrentTables();
     const { data: profile } = await supabase
       .from(t.profiles)
       .select('role')
@@ -58,11 +72,10 @@ export async function loginAction(formData: FormData) {
       redirect('/admin');
     } else {
       // It's a customer
-      redirect('/derme/shop');
+      redirect(`/${storeSlug}/shop`);
     }
   } else {
-    // Fallback
-    redirect('/derme/shop');
+    redirect(`/${storeSlug}/shop`);
   }
 }
 
@@ -92,7 +105,8 @@ export async function signOutAction() {
 export async function createUserAction(formData: FormData) {
   // 1. Check if current user is Super Admin
   const supabase = await createSSRClient();
-  const t = await getCurrentTables();
+  const storeSlug = await resolveAuthStoreSlug(formData);
+  const t = getTables(storeSlug);
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) return { error: 'Unauthorized' };
@@ -122,7 +136,8 @@ export async function createUserAction(formData: FormData) {
   const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
-    email_confirm: true // Auto-confirm email so they can login immediately
+    email_confirm: true, // Auto-confirm email so they can login immediately
+    user_metadata: { store_slug: storeSlug }
   });
 
   if (createError) return { error: createError.message };

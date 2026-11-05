@@ -61,7 +61,7 @@ export default async function AdminProductsPage(props: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-secondary-900">Products</h1>
-        <Link href="/admin/products/create">
+        <Link href={`/admin/${storeSlug}/products/create`}>
           <Button leftIcon={<Plus size={18} />}>
             Add Product
           </Button>
@@ -107,7 +107,7 @@ export default async function AdminProductsPage(props: PageProps) {
                   <div className="flex items-center justify-end gap-2">
                     {/* Edit Link */}
                     <Link
-                      href={`/admin/products/${product.id}/edit`}
+                      href={`/admin/${storeSlug}/products/${product.id}/edit`}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     >
                       <Edit2 size={18} />

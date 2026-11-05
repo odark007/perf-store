@@ -4,28 +4,38 @@ import Image from 'next/image';
 import { ArrowRight, ShieldCheck, Sparkles, MapPin, LayoutGrid, Heart, Search, Gift } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { createClient } from '@/lib/supabase/server';
-import { getTables } from '@/lib/stores/config';
+import { getTables, getStoreOrNull } from '@/lib/stores/config';
+import { notFound } from 'next/navigation';
 import ProductCard from '@/components/shop/ProductCard';
 import BlogCard from '@/components/blog/BlogCard';
 import CampaignCarousel from '@/components/shop/CampaignCarousel';
 import ToyHomePage from '@/components/shop/toy/ToyHomePage';
 
-export const metadata = {
-  title: 'Jarayel Commerce | Curated Online Stores',
-  description: 'Authentic luxury goods, cutting-edge RC vehicles, robotics, and lifestyle essentials delivered across Ghana.',
-};
-
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ store: string }> }) {
+  const { store: storeSlug } = await params;
+  const store = getStoreOrNull(storeSlug);
+  if (!store) return { title: 'Jarayel Commerce' };
+  return {
+    title: store.seo.title,
+    description: store.seo.description,
+    keywords: store.seo.keywords,
+  };
+}
 
 export default async function HomePage({ params }: { params: Promise<{ store: string }> }) {
   const { store: storeSlug } = await params;
+  const store = getStoreOrNull(storeSlug);
+  if (!store) notFound();
+
   const t = getTables(storeSlug);
   const supabase = await createClient();
 
   // =========================================================================
   // TOY SHOP HOMEPAGE (/play-time)
   // =========================================================================
-  if (storeSlug === 'play-time') {
+  if (store.isToy) {
     const [categoriesRes, featuredRes] = await Promise.all([
       supabase.from(t.categories).select('id, name, slug, image_url').order('name'),
       (supabase as any)
@@ -149,17 +159,17 @@ export default async function HomePage({ params }: { params: Promise<{ store: st
             <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-brand-gold/30 bg-brand-gold/5 backdrop-blur-sm">
               <Sparkles size={14} className="text-brand-gold" />
               <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-brand-gold">
-                The Essence of Luxury
+                {store.hero.eyebrow}
               </span>
             </div>
 
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold text-white leading-[1.1] tracking-tight">
-              Elevate Your <br />
-              <span className="text-brand-gold italic">Aura.</span>
+              {store.hero.title} <br />
+              <span className="text-brand-gold italic">{store.hero.accent}</span>
             </h1>
 
             <p className="text-lg md:text-xl text-brand-cream/90 max-w-xl mx-auto lg:mx-0 font-body leading-relaxed">
-              Ghana's premier selection of authentic luxury fragrances. Discover the scent that speaks your truth, curated from the world's most iconic perfume houses.
+              {store.hero.description}
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
@@ -307,7 +317,7 @@ export default async function HomePage({ params }: { params: Promise<{ store: st
                 <span className="text-brand-gold font-bold tracking-[0.3em] uppercase text-[10px]">The Essence</span>
                 <h2 className="text-4xl md:text-5xl font-display font-bold italic">Uncompromising Quality</h2>
                 <p className="text-brand-cream/90 text-lg leading-relaxed font-body">
-                  At The Perfume Store, we believe a fragrance is more than a scent—it&apos;s a legacy. We source exclusively from authorized distributors to ensure every bottle is a masterpiece of authenticity.
+                  At {store.name}, we believe a fragrance is more than a scent—it&apos;s a legacy. We source exclusively from authorized distributors to ensure every bottle is a masterpiece of authenticity.
                 </p>
               </div>
 
