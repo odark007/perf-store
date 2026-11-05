@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getLockedStoreSlug, getStoreOrNull, getTables } from '@/lib/stores/config';
+import { getStoreOrNull, getTables } from '@/lib/stores/config';
 import { getCurrentStoreSlugOrNull } from '@/lib/stores/context';
 
 export async function POST(req: Request) {
@@ -56,14 +56,17 @@ export async function POST(req: Request) {
         const rawBaseUrl = process.env.PAYSTACK_CALLBACK_BASE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
         const baseUrl = rawBaseUrl.replace(/\/+$/, '');
 
-        // On a tenant-locked deployment the store lives at the root.
-        const storeSegment = getLockedStoreSlug() === storeSlug ? '' : `/${storeSlug}`;
+        // Paystack redirects the customer to this EXACT URL after payment.
+        // Include the store slug so each project has its own explicit callback,
+        // regardless of middleware rewrites / tenant lock
+        // (e.g. /royal-perfume-hub/checkout/verify on the Royal Netlify site).
+        const callbackUrl = `${baseUrl}/${storeSlug}/checkout/verify?orderId=${orderId}`;
 
         const params = {
             email,
             amount: amountInKobo,
             currency: store?.currency || 'GHS',
-            callback_url: `${baseUrl}${storeSegment}/checkout/verify?orderId=${orderId}`,
+            callback_url: callbackUrl,
             metadata: {
                 order_id: orderId,
                 store_slug: storeSlug,
@@ -104,7 +107,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: data.message }, { status: 400 });
         }
 
-        return NextResponse.json({ url: data.data.authorization_url, reference: data.data.reference, callback_url: `${baseUrl}${storeSegment}/checkout/verify?orderId=${orderId}` });
+        return NextResponse.json({ url: data.data.authorization_url, reference: data.data.reference, callback_url: callbackUrl });
 
     } catch (error: any) {
         console.error('Paystack Init Error:', error);
