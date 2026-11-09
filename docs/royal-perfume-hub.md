@@ -73,7 +73,7 @@ the same code but use different environment variables.
 - `/shop`, `/products/...`, `/checkout` → rewritten under the Royal tenant
 - `/admin` → rewrites to `/admin/royal-perfume-hub/dashboard`
 - `/admin/<other-store>/...` → redirected back to the Royal dashboard
-- the admin store switcher is hidden; the bare store chooser is skipped
+- the admin store switcher is hidden; `/admin` never lists other tenants
 - any other known store prefix (e.g. `/derme/...`) → redirected to the root
 
 `NEXT_PUBLIC_STORE_SLUG` lets client components resolve the tenant without the

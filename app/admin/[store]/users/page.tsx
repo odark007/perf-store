@@ -53,7 +53,7 @@ export default async function UsersPage({ params }: { params: Promise<{ store: s
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-secondary-900">Admin Users</h1>
-        <Link href="/admin/users/create">
+        <Link href={`/admin/${storeSlug}/users/create`}>
           <Button leftIcon={<UserPlus size={18} />}>
             New User
           </Button>

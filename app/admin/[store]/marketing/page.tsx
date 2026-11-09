@@ -25,7 +25,7 @@ export default async function MarketingPage({ params }: { params: Promise<{ stor
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-secondary-900">Marketing Campaigns</h1>
-        <Link href="/admin/marketing/create">
+        <Link href={`/admin/${storeSlug}/marketing/create`}>
           <Button leftIcon={<Plus size={18} />}>New Campaign</Button>
         </Link>
       </div>
@@ -78,7 +78,7 @@ export default async function MarketingPage({ params }: { params: Promise<{ stor
               {/* Actions */}
               <div className="flex gap-2">
                 <Link
-                  href={`/admin/marketing/${campaign.id}/edit`}
+                  href={`/admin/${storeSlug}/marketing/${campaign.id}/edit`}
                   className="p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                 >
                   <Edit2 size={20} />

@@ -11,6 +11,8 @@ interface VariantInput {
   price: number;
   stock_deduction: number;
   sku?: string;
+  stock?: number;
+  variant_options?: Record<string, string>;
 }
 
 // A single item inside a bundle/set. Either a reference to a listed product
@@ -63,6 +65,16 @@ interface ProductInput {
   cogs?: number | null;
   gallery?: string[];
   same_day_dispatch?: boolean;
+
+  // Multi-category PIM fields (Tupp with akay)
+  attributes?: Record<string, string>;
+  category_class?: string;
+  weight_kg?: number | null;
+  dimensions?: string;
+  shipping_class?: string;
+  is_hazmat?: boolean;
+  is_fragile?: boolean;
+  has_lithium_battery?: boolean;
 }
 
 // Helper to sanitize promotion data
@@ -87,17 +99,37 @@ export async function createProduct(input: ProductInput) {
     const promo = sanitizePromotion(input);
 
     // 1. Inventory
-    const { data: inventory, error: invError } = await supabase
-      .from(t.inventory)
-      .insert({
-        product_name: `${input.title} (Inventory)`,
-        current_stock_level: input.initial_stock,
-        low_stock_threshold: input.threshold || 10
-      })
-      .select()
-      .single();
+    const hasPerVariantStock = input.variants.some(v => v.stock !== undefined && v.stock !== null);
+    let inventoryIds: string[] = [];
 
-    if (invError) throw new Error(`Inventory Error: ${invError.message}`);
+    if (hasPerVariantStock) {
+      for (const v of input.variants) {
+        const { data: inv, error: invError } = await supabase
+          .from(t.inventory)
+          .insert({
+            product_name: `${input.title} - ${v.name || v.type} (Inventory)`,
+            current_stock_level: v.stock || 0,
+            low_stock_threshold: input.threshold || 10
+          })
+          .select()
+          .single();
+        if (invError) throw new Error(`Inventory Error: ${invError.message}`);
+        inventoryIds.push(inv.id);
+      }
+    } else {
+      const { data: inventory, error: invError } = await supabase
+        .from(t.inventory)
+        .insert({
+          product_name: `${input.title} (Inventory)`,
+          current_stock_level: input.initial_stock,
+          low_stock_threshold: input.threshold || 10
+        })
+        .select()
+        .single();
+      if (invError) throw new Error(`Inventory Error: ${invError.message}`);
+      inventoryIds = input.variants.map(() => inventory.id);
+    }
+
 
     // 2. Category Name
     const { data: catData } = await supabase.from(t.categories).select('name').eq('id', input.category_id).single();
@@ -140,7 +172,16 @@ export async function createProduct(input: ProductInput) {
         compare_at_price: input.compare_at_price,
         cogs: input.cogs,
         gallery: input.gallery,
-        same_day_dispatch: input.same_day_dispatch ?? false
+        same_day_dispatch: input.same_day_dispatch ?? false,
+        // Multi-category PIM
+        attributes: input.attributes || {},
+        category_class: input.category_class || null,
+        weight_kg: input.weight_kg ?? null,
+        dimensions: input.dimensions || null,
+        shipping_class: input.shipping_class || null,
+        is_hazmat: input.is_hazmat ?? false,
+        is_fragile: input.is_fragile ?? false,
+        has_lithium_battery: input.has_lithium_battery ?? false
       })
       .select()
       .single();
@@ -148,15 +189,15 @@ export async function createProduct(input: ProductInput) {
     if (prodError) throw new Error(`Product Error: ${prodError.message}`);
 
     // 4. Variants (FIX: Unique SKU generation)
-    const variantsData = input.variants.map(v => ({
+    const variantsData = input.variants.map((v, i) => ({
       product_id: product.id,
-      master_stock_id: inventory.id,
+      master_stock_id: inventoryIds[i],
       name: v.name,
       type: v.type,
       price: v.price,
       stock_deduction: v.stock_deduction,
-      // Add random string to ensure uniqueness even if type is same
-      sku: v.sku || `${slug}-${v.type}-${Math.random().toString(36).substring(2, 7)}`
+      sku: v.sku || `${(input.brand || 'ITEM').replace(/\s+/g, '').toUpperCase().slice(0, 4)}-${(catData?.name || 'CAT').replace(/\s+/g, '').toUpperCase().slice(0, 3)}-${slug.toUpperCase().slice(0, 6)}-${(v.name || v.type).replace(/\s+/g, '').toUpperCase().slice(0, 6)}`,
+      variant_options: v.variant_options || {},
     }));
 
     const { error: varError } = await supabase.from(t.productVariants).insert(variantsData);
@@ -234,7 +275,16 @@ export async function updateProduct(productId: string, input: Omit<ProductInput,
       compare_at_price: input.compare_at_price,
       cogs: input.cogs,
       gallery: input.gallery,
-      same_day_dispatch: input.same_day_dispatch ?? false
+      same_day_dispatch: input.same_day_dispatch ?? false,
+      // Multi-category PIM
+      attributes: input.attributes || {},
+      category_class: input.category_class || null,
+      weight_kg: input.weight_kg ?? null,
+      dimensions: input.dimensions || null,
+      shipping_class: input.shipping_class || null,
+      is_hazmat: input.is_hazmat ?? false,
+      is_fragile: input.is_fragile ?? false,
+      has_lithium_battery: input.has_lithium_battery ?? false
     }).eq('id', productId);
 
     // Update Inventory Name

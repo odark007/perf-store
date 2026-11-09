@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { ArrowLeft, Save } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { createUserAction } from '@/app/auth/actions';
+import { getPublicStoreSlug } from '@/lib/stores/config';
 
 export default function CreateUserPage() {
   const router = useRouter();
+  const storeSlug = getPublicStoreSlug();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,14 +25,14 @@ export default function CreateUserPage() {
       setLoading(false);
     } else {
       alert('User created successfully!');
-      router.push('/admin/users');
+      router.push(`/admin/${storeSlug}/users`);
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin/users" className="p-2 hover:bg-white rounded-lg transition-colors">
+        <Link href={`/admin/${storeSlug}/users`} className="p-2 hover:bg-white rounded-lg transition-colors">
           <ArrowLeft size={20} className="text-secondary-600" />
         </Link>
         <h1 className="text-2xl font-display font-bold text-secondary-900">Create New Admin</h1>

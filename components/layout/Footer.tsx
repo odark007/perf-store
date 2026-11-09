@@ -228,6 +228,32 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = DEFAULT_STORE_SLU
     ]
   };
 
+  const genericFooterLinks = {
+    shop: [
+      { label: 'All Products', href: `/${storeSlug}/shop` },
+      { label: 'Electronics', href: `/${storeSlug}/shop?category=electronics` },
+      { label: 'Home & Living', href: `/${storeSlug}/shop?category=home-living` },
+      { label: 'Beauty & Fragrance', href: `/${storeSlug}/shop?category=beauty-fragrance` },
+      { label: 'New Arrivals', href: `/${storeSlug}/shop?category=new-arrivals` },
+      { label: 'Deals', href: `/${storeSlug}/shop?category=deals` },
+    ],
+    support: [
+      { label: 'Track Order', href: `/${storeSlug}/account/history` },
+      { label: 'Shipping Policy', href: `/${storeSlug}/shipping` },
+      { label: 'Returns & Exchanges', href: `/${storeSlug}/returns` },
+      { label: 'FAQ', href: `/${storeSlug}/faq` },
+      { label: 'Contact Us', href: `/${storeSlug}/contact` },
+    ],
+    company: [
+      { label: 'Our Story', href: `/${storeSlug}/about` },
+      { label: 'Blog', href: `/${storeSlug}/blog` },
+      { label: 'Terms of Service', href: `/${storeSlug}/terms` },
+      { label: 'Privacy Policy', href: `/${storeSlug}/privacy` },
+    ]
+  };
+
+  const footerLinks = store.isPerfume ? perfumeFooterLinks : genericFooterLinks;
+
   return (
     <footer className="bg-brand-deep text-brand-subtle border-t border-brand-border mt-auto font-body">
       {/* 1. Value Props / Trust Signals */}
@@ -320,7 +346,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = DEFAULT_STORE_SLU
             <div>
               <h4 className="font-bold text-white mb-6 uppercase tracking-[0.2em] text-[10px]">Collection</h4>
               <ul className="space-y-4">
-                {perfumeFooterLinks.shop.map(link => (
+                {footerLinks.shop.map(link => (
                   <li key={link.label}>
                     <Link href={link.href} className="text-xs hover:text-brand-gold transition-colors">{link.label}</Link>
                   </li>
@@ -330,7 +356,7 @@ const Footer: React.FC<FooterProps> = ({ settings, storeSlug = DEFAULT_STORE_SLU
             <div>
               <h4 className="font-bold text-white mb-6 uppercase tracking-[0.2em] text-[10px]">Client Care</h4>
               <ul className="space-y-4">
-                {perfumeFooterLinks.support.map(link => (
+                {footerLinks.support.map(link => (
                   <li key={link.label}>
                     <Link href={link.href} className="text-xs hover:text-brand-gold transition-colors">{link.label}</Link>
                   </li>

@@ -29,7 +29,7 @@ export default async function InventoryPage({ params }: { params: Promise<{ stor
         <h1 className="text-2xl font-display font-bold text-secondary-900">Inventory Management</h1>
         <div className="flex gap-3">
           {/* We will build the Product Creation flow next */}
-          <Link href="/admin/products">
+          <Link href={`/admin/${storeSlug}/products`}>
             <Button leftIcon={<PlusCircle size={18} />}>
               Manage Products
             </Button>

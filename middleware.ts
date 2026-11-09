@@ -112,8 +112,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Logged in on the bare /admin (store chooser) → allow through.
-    // Logged in on /admin/<store>/... → allow through (store scope validated in page).
+    // Logged in on the bare /admin (resolved to the active store) → allow through.
+    // Logged in on /admin/<store>/... → allow through (access is enforced by the store layout).
   }
 
   // 2. Protect Auth Pages (Don't show login if already logged in)

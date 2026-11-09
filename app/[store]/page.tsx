@@ -66,6 +66,138 @@ export default async function HomePage({ params }: { params: Promise<{ store: st
   }
 
   // =========================================================================
+  // TUPP WITH AKAY HOMEPAGE (multi-category)
+  // =========================================================================
+  if (!store.isPerfume && !store.isToy) {
+    const [categoriesRes, featuredRes] = await Promise.all([
+      supabase.from(t.categories).select('id, name, slug, image_url').order('name'),
+      (supabase as any)
+        .from(t.products)
+        .select(`
+          *,
+          ${t.categories}(name),
+          variants:${t.productVariants}(
+            *,
+            inventory:${t.inventory}(current_stock_level)
+          )
+        `)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(8)
+    ]);
+
+    const categories = categoriesRes.data || [];
+    const featuredProducts = featuredRes.data || [];
+
+    return (
+      <div className="bg-brand-cream/10">
+        {/* HERO */}
+        <section className="relative min-h-[70vh] flex items-center overflow-hidden bg-brand-deep">
+          <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-brand-gold/10 rounded-full blur-[120px]" />
+          <div className="container-custom relative z-10 py-20 text-center lg:text-left grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full border border-brand-gold/30 bg-brand-gold/5 backdrop-blur-sm">
+                <Sparkles size={14} className="text-brand-gold" />
+                <span className="text-[10px] md:text-xs font-bold uppercase tracking-[0.3em] text-brand-gold">
+                  {store.hero.eyebrow}
+                </span>
+              </div>
+              <h1 className="text-5xl md:text-7xl font-display font-bold text-white leading-[1.1] tracking-tight">
+                {store.hero.title} <br />
+                <span className="text-brand-gold italic">{store.hero.accent}</span>
+              </h1>
+              <p className="text-lg md:text-xl text-brand-cream/90 max-w-xl mx-auto lg:mx-0 font-body leading-relaxed">
+                {store.hero.description}
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                <Link href={`/${storeSlug}/shop`} className="w-full sm:w-auto">
+                  <Button size="xl" className="w-full bg-brand-gold text-brand-deep hover:bg-white hover:text-brand-deep border-none shadow-xl shadow-brand-gold/20">
+                    Shop Now
+                  </Button>
+                </Link>
+                <Link href={`/${storeSlug}/about`} className="w-full sm:w-auto">
+                  <Button variant="outline" size="xl" className="w-full border-brand-gold/30 text-white hover:bg-brand-gold/10">
+                    Our Story
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CATEGORY TILES */}
+        {categories.length > 0 && (
+          <section className="py-16 container-custom">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-display font-bold text-brand-deep">Shop by Department</h2>
+              <div className="w-24 h-[1px] bg-brand-gold mx-auto mt-3" />
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {categories.map((cat: any) => (
+                <Link
+                  key={cat.id}
+                  href={`/${storeSlug}/shop?category=${cat.slug}`}
+                  className="group relative h-40 rounded-2xl overflow-hidden border border-brand-border bg-brand-cream/40 hover:shadow-lg transition-all"
+                >
+                  <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
+                    <span className="font-display font-bold text-brand-deep text-sm group-hover:text-brand-gold transition-colors">
+                      {cat.name}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* FEATURED PRODUCTS */}
+        {featuredProducts.length > 0 && (
+          <section className="py-16 bg-white">
+            <div className="container-custom">
+              <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
+                <h2 className="text-3xl font-display font-bold text-brand-deep">Featured Products</h2>
+                <Link href={`/${storeSlug}/shop`} className="text-brand-gold font-bold text-sm uppercase tracking-widest hover:underline">
+                  View All →
+                </Link>
+              </div>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                {featuredProducts.map((p: any) => {
+                  const uiVariants = (p.variants || []).map((v: any) => ({
+                    id: v.id,
+                    name: v.name,
+                    type: v.type,
+                    price: v.price,
+                    stock_deduction: v.stock_deduction || 1,
+                    master_stock: v.inventory?.current_stock_level || 0
+                  }));
+                  return (
+                    <ProductCard
+                      key={p.id}
+                      id={p.id}
+                      slug={p.slug}
+                      title={p.title}
+                      image={p.base_image_url}
+                      category={p.categories?.name || 'Product'}
+                      variants={uiVariants}
+                      isFeatured={p.is_featured}
+                      brand={p.brand}
+                      concentration={p.concentration}
+                      scent_family={p.scent_family}
+                      discountPercent={p.discount_percent}
+                      discountStart={p.discount_start_at}
+                      discountEnd={p.discount_end_at}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+      </div>
+    );
+  }
+
+  // =========================================================================
   // PERFUME STORE HOMEPAGE (/derme)
   // =========================================================================
   const [featuredRes, blogRes, samplerRes, campaignRes] = await Promise.all([

@@ -48,7 +48,7 @@ const AdminSidebar = () => {
         <p className="text-xs text-brand-gold font-bold uppercase tracking-wider">Jarayel Technologies</p>
       </div>
 
-      {/* Current store (static; change stores from the /admin portal) */}
+      {/* Current store (static; admin is scoped to one tenant per session) */}
       <div className="px-4 pt-4 flex-shrink-0">
         <div className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-brand-deep bg-white border border-brand-border rounded-lg">
           <Store size={16} className="text-brand-muted" />

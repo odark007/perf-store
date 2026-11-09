@@ -42,6 +42,7 @@ const Navbar = ({ storeSlug = DEFAULT_STORE_SLUG }: NavbarProps) => {
   const store = getStoreOrNull(storeSlug) ?? STORES[DEFAULT_STORE_SLUG];
   storeSlug = store.slug;
   const isToyShop = store.isToy;
+  const isPerfumeStore = store.isPerfume;
 
   // FIX: Select specific state pieces to trigger re-renders correctly
   const items = useCartStore((state) => state.items);
@@ -102,6 +103,16 @@ const Navbar = ({ storeSlug = DEFAULT_STORE_SLUG }: NavbarProps) => {
     { label: 'Body Mists', href: `/${storeSlug}/shop?category=body-mists` },
   ];
 
+  const genericNavLinks = [
+    { label: 'Home', href: `/${storeSlug}` },
+    { label: 'Shop All', href: `/${storeSlug}/shop` },
+    { label: 'Electronics', href: `/${storeSlug}/shop?category=electronics` },
+    { label: 'Home & Living', href: `/${storeSlug}/shop?category=home-living` },
+    { label: 'Beauty & Fragrance', href: `/${storeSlug}/shop?category=beauty-fragrance` },
+    { label: 'New Arrivals', href: `/${storeSlug}/shop?category=new-arrivals` },
+    { label: 'Deals', href: `/${storeSlug}/shop?category=deals` },
+  ];
+
   // "Specials" dropdown (perfume only): bundles/sets live here
   const specialsLinks = [
     { label: 'Gift Sets', href: `/${storeSlug}/specials/gift-sets` },
@@ -117,7 +128,11 @@ const Navbar = ({ storeSlug = DEFAULT_STORE_SLUG }: NavbarProps) => {
     { label: 'AI-Powered', href: `/${storeSlug}/shop?category=ai-powered` },
   ];
 
-  const navLinks = isToyShop ? toyNavLinks : perfumeNavLinks;
+  const navLinks = isToyShop
+    ? toyNavLinks
+    : isPerfumeStore
+      ? perfumeNavLinks
+      : genericNavLinks;
 
   const isActive = (href: string) => {
     if (href === `/${storeSlug}`) return pathname === `/${storeSlug}`;
@@ -351,12 +366,13 @@ const Navbar = ({ storeSlug = DEFAULT_STORE_SLUG }: NavbarProps) => {
             </Link>
           ))}
 
-          {/* Specials dropdown (perfume store only) */}
-          <div
-            className="relative"
-            onMouseEnter={() => setIsSpecialsOpen(true)}
-            onMouseLeave={() => setIsSpecialsOpen(false)}
-          >
+          {/* Specials dropdown (perfume stores only) */}
+          {isPerfumeStore && (
+            <div
+              className="relative"
+              onMouseEnter={() => setIsSpecialsOpen(true)}
+              onMouseLeave={() => setIsSpecialsOpen(false)}
+            >
             <button
               className={`flex items-center gap-1 text-[12px] font-medium tracking-[0.15em] uppercase font-body transition-colors duration-200 ${
                 pathname.includes('/specials') ? 'text-brand-gold' : 'text-brand-subtle hover:text-brand-gold'
@@ -383,6 +399,7 @@ const Navbar = ({ storeSlug = DEFAULT_STORE_SLUG }: NavbarProps) => {
               </div>
             )}
           </div>
+          )}
         </nav>
 
         {/* 3. Actions */}
@@ -497,20 +514,22 @@ const Navbar = ({ storeSlug = DEFAULT_STORE_SLUG }: NavbarProps) => {
               </Link>
             ))}
 
-            {/* Specials (perfume store only) */}
-            <div className="pt-1">
-              <p className="px-4 pb-1 text-[10px] font-bold uppercase tracking-[0.25em] text-brand-gold-pale/50">Specials</p>
-              {specialsLinks.map((link) => (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  className="flex items-center gap-4 p-4 rounded-xl font-medium text-brand-subtle transition-all hover:bg-brand-mid"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  <span className="uppercase tracking-[0.2em] text-xs">{link.label}</span>
-                </Link>
-              ))}
-            </div>
+            {/* Specials (perfume stores only) */}
+            {isPerfumeStore && (
+              <div className="pt-1">
+                <p className="px-4 pb-1 text-[10px] font-bold uppercase tracking-[0.25em] text-brand-gold-pale/50">Specials</p>
+                {specialsLinks.map((link) => (
+                  <Link
+                    key={link.label}
+                    href={link.href}
+                    className="flex items-center gap-4 p-4 rounded-xl font-medium text-brand-subtle transition-all hover:bg-brand-mid"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <span className="uppercase tracking-[0.2em] text-xs">{link.label}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
 
             <div className="h-px bg-brand-border my-4" />
 

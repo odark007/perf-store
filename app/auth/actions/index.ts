@@ -69,7 +69,8 @@ export async function loginAction(formData: FormData) {
       .single();
 
     if (profile?.role === 'super_admin' || profile?.role === 'store_manager') {
-      redirect('/admin');
+      // Admin is store-scoped — go straight to this store's console.
+      redirect(`/admin/${storeSlug}/dashboard`);
     } else {
       // It's a customer
       redirect(`/${storeSlug}/shop`);

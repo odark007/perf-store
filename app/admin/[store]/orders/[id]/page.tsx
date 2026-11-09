@@ -37,7 +37,7 @@ export default async function OrderDetailPage({ params }: PageProps) {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center gap-4">
-                <Link href="/admin/orders" className="p-2 hover:bg-white rounded-lg transition-colors">
+                <Link href={`/admin/${storeSlug}/orders`} className="p-2 hover:bg-white rounded-lg transition-colors">
                     <ArrowLeft size={20} className="text-secondary-600" />
                 </Link>
                 <div>

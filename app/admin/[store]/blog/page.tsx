@@ -59,7 +59,7 @@ export default async function AdminBlogPage(props: PageProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-secondary-900">Blog Posts</h1>
-        <Link href="/admin/blog/create">
+        <Link href={`/admin/${storeSlug}/blog/create`}>
           <Button leftIcon={<Plus size={18} />}>New Post</Button>
         </Link>
       </div>
@@ -104,7 +104,7 @@ export default async function AdminBlogPage(props: PageProps) {
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
                     <Link 
-                      href={`/admin/blog/${post.id}/edit`} 
+                      href={`/admin/${storeSlug}/blog/${post.id}/edit`} 
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                       title="Edit Post"
                     >

@@ -56,6 +56,8 @@ export async function generateMetadata({ params }: PageProps) {
 export default async function ProductDetailPage({ params }: PageProps) {
   const { slug, store: storeSlug } = await params;
 
+  const store = getStore(storeSlug);
+
   // 1. Fetch Main Data
   const product = await getProductBySlug(slug);
 
@@ -141,6 +143,36 @@ export default async function ProductDetailPage({ params }: PageProps) {
             variants={uiVariants}
           />
         </div>
+
+        {/* PIM / Logistics (Tupp with akay) */}
+        {!store.isPerfume && !store.isToy && (product.attributes || product.weight_kg || product.dimensions || product.shipping_class || product.is_hazmat || product.is_fragile || product.has_lithium_battery) && (
+          <div className="bg-white/60 border border-brand-border/40 rounded-3xl p-8 md:p-10">
+            <h2 className="text-2xl font-display font-bold text-brand-deep mb-4">Product details</h2>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              {product.weight_kg && (
+                <div><dt className="font-bold text-brand-deep">Weight</dt><dd className="text-brand-muted">{product.weight_kg} kg</dd></div>
+              )}
+              {product.dimensions && (
+                <div><dt className="font-bold text-brand-deep">Dimensions</dt><dd className="text-brand-muted">{product.dimensions}</dd></div>
+              )}
+              {product.shipping_class && (
+                <div><dt className="font-bold text-brand-deep">Shipping class</dt><dd className="text-brand-muted">{product.shipping_class}</dd></div>
+              )}
+              {product.is_hazmat && (
+                <div><dt className="font-bold text-brand-deep">HazMat</dt><dd className="text-brand-muted">Yes (restricted shipping)</dd></div>
+              )}
+              {product.is_fragile && (
+                <div><dt className="font-bold text-brand-deep">Fragile</dt><dd className="text-brand-muted">Yes</dd></div>
+              )}
+              {product.has_lithium_battery && (
+                <div><dt className="font-bold text-brand-deep">Battery</dt><dd className="text-brand-muted">Lithium-ion</dd></div>
+              )}
+              {product.attributes && Object.keys(product.attributes).length > 0 && Object.entries(product.attributes).map(([k, v]) => (
+                <div key={k}><dt className="font-bold text-brand-deep capitalize">{k.replace(/_/g, ' ')}</dt><dd className="text-brand-muted">{String(v)}</dd></div>
+              ))}
+            </dl>
+          </div>
+        )}
 
         {/* Bundle Contents (Gift Sets) */}
         {product.set_type && Array.isArray(product.bundle_items) && product.bundle_items.length > 0 && (

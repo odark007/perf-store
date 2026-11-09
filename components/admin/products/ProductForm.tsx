@@ -21,7 +21,7 @@ import {
 import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/admin/input/ImageUpload';
 import { createProduct, updateProduct } from '@/app/actions/product';
-import { getPublicStoreSlug, getStoreBuckets } from '@/lib/stores/config';
+import { getPublicStoreSlug, getStoreBuckets, STORES, DEFAULT_STORE_SLUG } from '@/lib/stores/config';
 
 interface ProductFormProps {
   categories: { id: string; name: string }[];
@@ -73,6 +73,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
   const params = useParams();
   const storeSlug = getPublicStoreSlug(params?.store as string | undefined);
   const storeBuckets = getStoreBuckets(storeSlug);
+  const isPerfumeStore = (STORES[storeSlug] ?? STORES[DEFAULT_STORE_SLUG]).isPerfume;
   const isToyShop = storeSlug === 'play-time';
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
@@ -107,6 +108,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sameDayDispatch, setSameDayDispatch] = useState(false);
 
+  // Multi-category PIM (Tupp with akay)
+  const [categoryClass, setCategoryClass] = useState('');
+  const [attributesJson, setAttributesJson] = useState('{}');
+  const [weightKg, setWeightKg] = useState<number | ''>('');
+  const [dimensions, setDimensions] = useState('');
+  const [shippingClass, setShippingClass] = useState('');
+  const [isHazmat, setIsHazmat] = useState(false);
+  const [isFragile, setIsFragile] = useState(false);
+  const [hasLithiumBattery, setHasLithiumBattery] = useState(false);
+
   // Toy Specs
   const [connectivity, setConnectivity] = useState('');
   const [companionApp, setCompanionApp] = useState('');
@@ -135,7 +146,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
 
   // Variants & Inventory
   const [variants, setVariants] = useState([
-    { name: isToyShop ? 'Single Unit' : '100ml', type: 'single', price: 0, stock_deduction: 1 },
+    { name: isToyShop ? 'Single Unit' : '100ml', type: 'single', price: 0, stock_deduction: 1, stock: 0, variant_options: {} as Record<string, string> },
   ]);
   const [initialStock, setInitialStock] = useState(0);
   const [threshold, setThreshold] = useState(10);
@@ -209,14 +220,18 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
         );
       }
 
-      setVariants(initialData.variants || []);
+      setVariants((initialData.variants || []).map((v: any) => ({
+        ...v,
+        stock: v.stock ?? 0,
+        variant_options: v.variant_options || {},
+      })));
     } else if (categories.length > 0) {
       setCategoryId(categories[0].id);
     }
   }, [initialData, categories]);
 
   const addVariant = () => {
-    setVariants([...variants, { name: '', type: 'single', price: 0, stock_deduction: 1 }]);
+    setVariants([...variants, { name: '', type: 'single', price: 0, stock_deduction: 1, stock: 0, variant_options: {} as Record<string, string> }]);
   };
 
   const removeVariant = (index: number) => {
@@ -335,6 +350,16 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
       cogs: cogs === '' ? null : Number(cogs),
       same_day_dispatch: sameDayDispatch,
 
+      // Multi-category PIM (Tupp with akay)
+      attributes: (() => { try { return JSON.parse(attributesJson || '{}'); } catch { return {}; } })(),
+      category_class: categoryClass || undefined,
+      weight_kg: weightKg === '' ? null : weightKg,
+      dimensions: dimensions || undefined,
+      shipping_class: shippingClass || undefined,
+      is_hazmat: isHazmat,
+      is_fragile: isFragile,
+      has_lithium_battery: hasLithiumBattery,
+
       // Bundle / Set (perfume only)
       set_type: setType,
       bundle_items: setType ? bundleItems.map(b => ({
@@ -347,7 +372,10 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
       variants: variants.map(v => ({
         ...v,
         price: v.price || 0,
-        stock_deduction: v.stock_deduction || 1
+        stock_deduction: v.stock_deduction || 1,
+        variant_options: typeof v.variant_options === 'string'
+          ? (() => { try { return JSON.parse(v.variant_options || '{}'); } catch { return {}; } })()
+          : (v.variant_options || {}),
       }))
     };
 
@@ -865,6 +893,32 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
                       className="w-full p-2.5 bg-white border border-secondary-100 rounded-xl text-sm font-bold"
                     />
                   </div>
+                  {!isToyShop && !isPerfumeStore && (
+                    <>
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-secondary-400 mb-1 block ml-1">Stock</label>
+                        <input
+                          type="number"
+                          value={Number.isNaN(variant.stock) ? '' : variant.stock}
+                          onChange={e => {
+                            const val = e.target.value;
+                            updateVariant(index, 'stock', val === '' ? NaN : parseInt(val));
+                          }}
+                          className="w-full p-2.5 bg-white border border-secondary-100 rounded-xl text-sm font-bold"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-secondary-400 mb-1 block ml-1">Options (JSON)</label>
+                        <input
+                          type="text"
+                          placeholder='{"Color":"Black"}'
+                          value={typeof variant.variant_options === 'string' ? variant.variant_options : JSON.stringify(variant.variant_options || {})}
+                          onChange={e => updateVariant(index, 'variant_options', e.target.value)}
+                          className="w-full p-2.5 bg-white border border-secondary-100 rounded-xl text-sm font-bold"
+                        />
+                      </div>
+                    </>
+                  )}
                   {variants.length > 1 && (
                     <button type="button" onClick={() => removeVariant(index)} className="p-3 text-red-500 hover:bg-red-50 rounded-xl transition-colors">
                       <Trash2 size={18} />
@@ -926,6 +980,86 @@ const ProductForm: React.FC<ProductFormProps> = ({ categories, allProducts = [],
                 />
                 <label htmlFor="sameDayDispatch" className="font-bold text-secondary-900 cursor-pointer select-none text-xs uppercase tracking-wider">
                   Same-Day Accra Dispatch
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* MULTI-CATEGORY PIM (Tupp with akay) */}
+          {!isToyShop && !isPerfumeStore && (
+            <div className="bg-white p-6 rounded-3xl border border-secondary-200 shadow-sm space-y-4">
+              <h3 className="font-bold text-secondary-900 uppercase tracking-widest text-[10px] border-b border-secondary-50 pb-4">
+                Product Information (PIM)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-secondary-600 mb-1">Category Class</label>
+                  <select
+                    value={categoryClass}
+                    onChange={e => setCategoryClass(e.target.value)}
+                    className="w-full p-2.5 bg-secondary-50 rounded-xl text-sm font-bold"
+                  >
+                    <option value="">Select...</option>
+                    <option value="Electronics">Electronics</option>
+                    <option value="Home & Living">Home & Living</option>
+                    <option value="Beauty & Fragrance">Beauty & Fragrance</option>
+                    <option value="New Arrivals">New Arrivals</option>
+                    <option value="Deals">Deals</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-secondary-600 mb-1">Weight (kg)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={weightKg}
+                    onChange={e => setWeightKg(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                    className="w-full p-2.5 bg-secondary-50 rounded-xl text-sm font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-secondary-600 mb-1">Dimensions (L×W×H)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 10x5x3 cm"
+                    value={dimensions}
+                    onChange={e => setDimensions(e.target.value)}
+                    className="w-full p-2.5 bg-secondary-50 rounded-xl text-sm font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase text-secondary-600 mb-1">Shipping Class</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Standard, HazMat, Fragile"
+                    value={shippingClass}
+                    onChange={e => setShippingClass(e.target.value)}
+                    className="w-full p-2.5 bg-secondary-50 rounded-xl text-sm font-bold"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold uppercase text-secondary-600 mb-1">Attributes (JSON)</label>
+                <textarea
+                  value={attributesJson}
+                  onChange={e => setAttributesJson(e.target.value)}
+                  rows={4}
+                  className="w-full p-2.5 bg-secondary-50 rounded-xl text-sm font-mono"
+                  placeholder='{"voltage": "220V", "color": "Black"}'
+                />
+              </div>
+              <div className="flex flex-wrap gap-4 pt-2">
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                  <input type="checkbox" checked={isHazmat} onChange={e => setIsHazmat(e.target.checked)} />
+                  HazMat
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                  <input type="checkbox" checked={isFragile} onChange={e => setIsFragile(e.target.checked)} />
+                  Fragile
+                </label>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                  <input type="checkbox" checked={hasLithiumBattery} onChange={e => setHasLithiumBattery(e.target.checked)} />
+                  Li-ion Battery
                 </label>
               </div>
             </div>
